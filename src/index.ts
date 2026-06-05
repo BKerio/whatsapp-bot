@@ -1,6 +1,7 @@
 import "dotenv/config";
 import express from "express";
 import { handleMessage } from "@/bot/handler.js";
+import { connectDb } from "@/db/connect.js";
 import { env } from "@/env.js";
 import { markAsRead } from "@/whatsapp/client.js";
 import type { IncomingMessage, WebhookPayload } from "@/whatsapp/types.js";
@@ -112,15 +113,24 @@ app.get("/setup", (_req, res) => {
   });
 });
 
-app.listen(env.port, () => {
-  console.log(`Shuru bot listening on port ${env.port}`);
-  console.log("");
-  console.log("Meta webhook setup:");
-  console.log("  1. Run: ngrok http 3000");
-  console.log("  2. Callback URL: https://<ngrok-url>/api/whatsapp/webhook");
-  console.log("  3. Verify token: (WHATSAPP_VERIFY_TOKEN from .env)");
-  console.log("  4. Subscribe to the messages field");
-  console.log("");
-  console.log("Webhook path:");
-  console.log(`  http://localhost:${env.port}/api/whatsapp/webhook`);
+async function start(): Promise<void> {
+  await connectDb();
+
+  app.listen(env.port, () => {
+    console.log(`Shuru bot listening on port ${env.port}`);
+    console.log("");
+    console.log("Meta webhook setup:");
+    console.log("  1. Run: ngrok http 3000");
+    console.log("  2. Callback URL: https://<ngrok-url>/api/whatsapp/webhook");
+    console.log("  3. Verify token: (WHATSAPP_VERIFY_TOKEN from .env)");
+    console.log("  4. Subscribe to the messages field");
+    console.log("");
+    console.log("Webhook path:");
+    console.log(`  http://localhost:${env.port}/api/whatsapp/webhook`);
+  });
+}
+
+start().catch((err) => {
+  console.error("Failed to start server:", err);
+  process.exit(1);
 });

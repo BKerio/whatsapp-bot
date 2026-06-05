@@ -1,3 +1,5 @@
+import { findUserByPhone } from "@/models/user.js";
+import { handleRegisterFlow, startRegister } from "@/bot/register.js";
 import { sendMessage } from "@/whatsapp/client.js";
 import type { IncomingMessage } from "@/whatsapp/types.js";
 import {
@@ -39,9 +41,14 @@ function normalizeText(input: string): string {
 
 async function showMainMenu(to: string): Promise<void> {
   resetSession(to);
+  const user = await findUserByPhone(to);
+  const text = user
+    ? `Welcome back, *${user.name}* 👋\n\nYour virtual assistant for tax and compliance services.\n\nSelect a service below to get started.`
+    : MAIN_MENU_TEXT;
+
   await sendMessage(to, {
     type: "list",
-    text: MAIN_MENU_TEXT,
+    text,
     buttonLabel: "View Services",
     rows: MAIN_MENU_ROWS,
   });
@@ -120,6 +127,9 @@ async function connectAgent(to: string): Promise<void> {
 
 async function handleServiceSelection(to: string, serviceId: string): Promise<void> {
   switch (serviceId) {
+    case "register":
+      await startRegister(to);
+      break;
     case "file_returns":
       await startFileReturns(to);
       break;
@@ -365,6 +375,13 @@ async function handleActiveFlow(
   }
 
   switch (flow) {
+    case "register_name":
+    case "register_id":
+    case "register_confirm": {
+      const done = await handleRegisterFlow(to, input, normalized);
+      if (done) await showMainMenu(to);
+      break;
+    }
     case "file_returns_pin":
     case "file_returns_otp":
     case "file_returns_period":
@@ -416,10 +433,12 @@ export async function handleMessage(
       return;
     }
 
-    await sendMessage(to, {
-      type: "text",
-      text: "Hi! 👋 Type *menu* or tap below to see available services.",
-    });
+    const user = await findUserByPhone(to);
+    const greeting = user
+      ? `Hi *${user.name}*! 👋 Type *menu* or tap below to see available services.`
+      : "Hi! 👋 Type *menu* or tap below to see available services.\n\n_New here? Select **Register** to create your profile._";
+
+    await sendMessage(to, { type: "text", text: greeting });
     await showMainMenu(to);
     return;
   }

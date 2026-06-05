@@ -15,6 +15,11 @@ export const MAIN_MENU_TEXT =
 
 export const MAIN_MENU_ROWS: ListRow[] = [
   {
+    id: "register",
+    title: "Register",
+    description: "Create or update your profile",
+  },
+  {
     id: "file_returns",
     title: "File Returns",
     description: "File or submit a nil return",
@@ -72,4 +77,4 @@ export const HELP_TEXT =
   "• Tap a service from the list to start a guided flow\n" +
   "• Type *back* or *cancel* to return to the main menu\n" +
   "• Select *Talk to Agent* for human support\n\n" +
-  "Available services: File Returns, PIN Status, Payments, TCC, and Help.";
+  "Available services: Register, File Returns, PIN Status, Payments, TCC, and Help.";

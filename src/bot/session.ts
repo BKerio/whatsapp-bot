@@ -1,5 +1,8 @@
 export type FlowStep =
   | "idle"
+  | "register_name"
+  | "register_id"
+  | "register_confirm"
   | "file_returns_pin"
   | "file_returns_otp"
   | "file_returns_period"

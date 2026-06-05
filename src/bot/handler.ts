@@ -1,5 +1,6 @@
 import { findUserByPhone } from "@/models/user.js";
 import { handleRegisterFlow, startRegister } from "@/bot/register.js";
+import { sendCompanyProfile } from "@/bot/profile.js";
 import {
   COMPANY,
   PAYMENT_CATEGORIES,
@@ -257,6 +258,10 @@ async function handleServiceSelection(to: string, serviceId: string): Promise<vo
       break;
     case "team":
       await showTeam(to);
+      break;
+    case "company_profile":
+      resetSession(to);
+      await sendCompanyProfile(to);
       break;
     case "agent":
       await connectAgent(to);

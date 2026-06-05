@@ -48,6 +48,11 @@ export const MAIN_MENU_ROWS: ListRow[] = [
     description: "Meet the Millenium team",
   },
   {
+    id: "company_profile",
+    title: "Company Profile",
+    description: "Request our business profile PDF",
+  },
+  {
     id: "agent",
     title: "Talk to Agent",
     description: "Speak with our support team",
@@ -75,5 +80,6 @@ export const HELP_TEXT =
   "• *Support Request* to log a ticket\n" +
   "• *Contact Us* for office details\n" +
   "• *Our Team* to meet our staff\n" +
+  "• *Company Profile* to receive our PDF brochure\n" +
   "• Type *back* or *cancel* to return to the main menu\n\n" +
   `🌐 ${COMPANY.website}`;

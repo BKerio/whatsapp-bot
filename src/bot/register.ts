@@ -1,3 +1,4 @@
+import { COMPANY } from "@/bot/company.js";
 import { saveUser, findUserByPhone } from "@/models/user.js";
 import { sendMessage } from "@/whatsapp/client.js";
 import { YES_NO_BUTTONS } from "@/bot/menus.js";
@@ -29,9 +30,9 @@ export async function startRegister(to: string): Promise<void> {
   await sendMessage(to, {
     type: "text",
     text:
-      "📝 *Register*\n\n" +
-      "Let's set up your profile.\n\n" +
-      "Enter your *full name* as it appears on your ID.\n\n" +
+      `📝 *Register with ${COMPANY.name}*\n\n` +
+      "Let's set up your customer profile for faster support.\n\n" +
+      "Enter your *full name*.\n\n" +
       "Type *back* to return to the main menu.",
   });
 }
@@ -108,7 +109,7 @@ export async function handleRegisterFlow(
         text:
           "✅ *Registration complete!*\n\n" +
           `Welcome, *${name}*.\n` +
-          "Your profile has been saved. You can now use all Shuru services.",
+          `Your profile has been saved. You can now access all ${COMPANY.name} support services.`,
       });
       return true;
     }

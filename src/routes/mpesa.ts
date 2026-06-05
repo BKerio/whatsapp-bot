@@ -170,7 +170,7 @@ router.post('/stkpush/callback', async (req: Request, res: Response) => {
           type: 'text',
           text:
             '✅ *Payment Successful!*\n\n' +
-            `Tax type: *${pending.taxType}*\n` +
+            `Service: *${pending.taxType}*\n` +
             `Amount: *KES ${pending.amount.toLocaleString()}*\n` +
             `M-Pesa Receipt: *${receipt}*\n\n` +
             'Thank you! Your payment has been received.',

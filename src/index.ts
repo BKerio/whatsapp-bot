@@ -10,6 +10,7 @@ import { env } from '@/env.js';
 import { markAsRead } from '@/whatsapp/client.js';
 import type { IncomingMessage, WebhookPayload } from '@/whatsapp/types.js';
 import mpesaRoutes from '@/routes/mpesa.js';
+import { COMPANY } from '@/bot/company.js';
 
 const app = express();
 
@@ -123,8 +124,9 @@ app.use('/api', mpesaRoutes);
 // ─── Utility Routes ──────────────────────────────────────────────────────────
 app.get('/', (_req, res) => {
   res.json({
-    service: 'shuru-bot',
-    message: 'Use /api/whatsapp/webhook as the Meta callback URL',
+    service: 'millenium-support',
+    company: COMPANY.name,
+    message: 'Millenium Solutions EA Ltd — WhatsApp Customer Support',
     health: '/health',
     setup: '/setup',
   });
@@ -133,14 +135,16 @@ app.get('/', (_req, res) => {
 app.get('/health', (_req, res) => {
   res.json({
     status: 'ok',
-    service: 'shuru-bot',
+    service: 'millenium-support',
+    company: COMPANY.name,
     db: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected',
   });
 });
 
 app.get('/setup', (_req, res) => {
   res.json({
-    service: 'shuru-bot',
+    service: 'millenium-support',
+    company: COMPANY.name,
     steps: [
       'Run only ONE ngrok tunnel: ngrok http 3000',
       'Copy the https URL from ngrok (it changes every restart)',
@@ -162,7 +166,7 @@ async function start(): Promise<void> {
 
   server.listen(env.port, () => {
     console.log('=========================================');
-    console.log(`Shuru bot listening on port ${env.port}`);
+    console.log(`${COMPANY.name} support bot listening on port ${env.port}`);
     console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
     console.log('');
     console.log('WhatsApp webhook:');

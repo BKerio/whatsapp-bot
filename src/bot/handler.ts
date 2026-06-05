@@ -1,5 +1,19 @@
 import { findUserByPhone } from "@/models/user.js";
 import { handleRegisterFlow, startRegister } from "@/bot/register.js";
+import {
+  COMPANY,
+  PAYMENT_CATEGORIES,
+  PAYMENT_LABELS,
+  SERVICE_CATALOG,
+  SERVICE_DETAILS,
+  SUPPORT_CATEGORIES,
+  SUPPORT_LABELS,
+  TEAM_BY_DEPARTMENT,
+  TEAM_DEPARTMENT_TITLES,
+  TEAM_DEPARTMENTS,
+  formatFullTeamDirectory,
+  formatTeamList,
+} from "@/bot/company.js";
 import { sendMessage } from "@/whatsapp/client.js";
 import type { IncomingMessage } from "@/whatsapp/types.js";
 import {
@@ -8,8 +22,6 @@ import {
   MAIN_MENU_ROWS,
   MAIN_MENU_TEXT,
   MENU_TRIGGERS,
-  PAYMENT_TYPES,
-  TAX_PERIODS,
   YES_NO_BUTTONS,
 } from "@/bot/menus.js";
 import { getSession, resetSession, setData, setFlow } from "@/bot/session.js";
@@ -45,13 +57,13 @@ async function showMainMenu(to: string): Promise<void> {
   resetSession(to);
   const user = await findUserByPhone(to);
   const text = user
-    ? `Welcome back, *${user.name}* 👋\n\nYour virtual assistant for tax and compliance services.\n\nSelect a service below to get started.`
+    ? `Welcome back, *${user.name}* 👋\n\n*${COMPANY.name}* Customer Support\n${COMPANY.tagline}\n\nHow can we help you today?`
     : MAIN_MENU_TEXT;
 
   await sendMessage(to, {
     type: "list",
     text,
-    buttonLabel: "View Services",
+    buttonLabel: "View Options",
     rows: MAIN_MENU_ROWS,
   });
 }
@@ -61,31 +73,122 @@ async function showHelp(to: string): Promise<void> {
   await sendMessage(to, {
     type: "list",
     text: "Need anything else?",
-    buttonLabel: "View Services",
+    buttonLabel: "View Options",
     rows: MAIN_MENU_ROWS,
   });
 }
 
-async function startFileReturns(to: string): Promise<void> {
-  setFlow(to, "file_returns_pin");
+async function showServices(to: string): Promise<void> {
+  resetSession(to);
   await sendMessage(to, {
-    type: "text",
+    type: "list",
     text:
-      "📄 *File Returns*\n\n" +
-      "Enter your *KRA PIN* to begin filing.\n\n" +
-      "_Example: A012345678X_\n" +
-      "Type *back* to return to the main menu.",
+      "🛠️ *Our Solutions*\n\n" +
+      "Millenium Solutions delivers transformative IT services across East Africa. Select a service to learn more:",
+    buttonLabel: "View Services",
+    rows: SERVICE_CATALOG,
   });
 }
 
-async function startPinCheck(to: string): Promise<void> {
-  setFlow(to, "pin_check_id");
+async function showServiceDetail(to: string, serviceId: string): Promise<void> {
+  const detail = SERVICE_DETAILS[serviceId];
+  if (!detail) {
+    await showServices(to);
+    return;
+  }
+
+  await sendMessage(to, { type: "text", text: detail });
+  await sendMessage(to, {
+    type: "buttons",
+    text: "Would you like to request support or speak with our team?",
+    buttons: [
+      { id: "support", title: "Support Request" },
+      { id: "agent", title: "Talk to Agent" },
+      BACK_BUTTON,
+    ],
+  });
+}
+
+async function showTeam(to: string): Promise<void> {
+  resetSession(to);
+  await sendMessage(to, {
+    type: "list",
+    text:
+      "👥 *Our Team*\n\n" +
+      "Meet the people behind Millenium Solutions EA Ltd. Select a department:",
+    buttonLabel: "View Team",
+    rows: TEAM_DEPARTMENTS,
+  });
+}
+
+async function showTeamDepartment(to: string, departmentId: string): Promise<void> {
+  if (departmentId === "team_all") {
+    const messages = formatFullTeamDirectory();
+    for (const text of messages) {
+      await sendMessage(to, { type: "text", text });
+    }
+    await sendMessage(to, {
+      type: "buttons",
+      text: "Would you like to speak with our team?",
+      buttons: [
+        { id: "agent", title: "Talk to Agent" },
+        { id: "support", title: "Support Request" },
+        BACK_BUTTON,
+      ],
+    });
+    return;
+  }
+
+  const members = TEAM_BY_DEPARTMENT[departmentId];
+  const title = TEAM_DEPARTMENT_TITLES[departmentId];
+  if (!members || !title) {
+    await showTeam(to);
+    return;
+  }
+
+  await sendMessage(to, { type: "text", text: formatTeamList(title, members) });
+  await sendMessage(to, {
+    type: "buttons",
+    text: "Browse more departments or get in touch:",
+    buttons: [
+      { id: "team", title: "Our Team" },
+      { id: "agent", title: "Talk to Agent" },
+      BACK_BUTTON,
+    ],
+  });
+}
+
+async function showContact(to: string): Promise<void> {
+  resetSession(to);
   await sendMessage(to, {
     type: "text",
     text:
-      "🔍 *Check PIN Status*\n\n" +
-      "Enter your *National ID number* to look up your KRA PIN.\n\n" +
-      "Type *back* to return to the main menu.",
+      `📍 *Contact ${COMPANY.name}*\n\n` +
+      `📧 Email: ${COMPANY.email}\n` +
+      `📞 Phone: ${COMPANY.phone}\n` +
+      `🏢 Address: ${COMPANY.address}\n` +
+      `🌐 Website: ${COMPANY.website}\n` +
+      `🕐 Hours: ${COMPANY.hours}\n\n` +
+      `${COMPANY.motto}`,
+  });
+  await sendMessage(to, {
+    type: "buttons",
+    text: "How would you like to proceed?",
+    buttons: [
+      { id: "support", title: "Support Request" },
+      { id: "agent", title: "Talk to Agent" },
+      BACK_BUTTON,
+    ],
+  });
+}
+
+async function startSupport(to: string): Promise<void> {
+  setFlow(to, "support_category");
+  await sendMessage(to, {
+    type: "list",
+    text: "🎫 *Support Request*\n\nSelect the category that best describes your issue:",
+    buttonLabel: "Select Category",
+    rows: SUPPORT_CATEGORIES,
   });
 }
 
@@ -93,56 +196,67 @@ async function startPayments(to: string): Promise<void> {
   setFlow(to, "payments_amount");
   await sendMessage(to, {
     type: "list",
-    text: "💳 *Payments*\n\nSelect the tax type you want to pay:",
-    buttonLabel: "Select Tax Type",
-    rows: PAYMENT_TYPES,
-  });
-}
-
-async function startTcc(to: string): Promise<void> {
-  setFlow(to, "tcc_pin");
-  await sendMessage(to, {
-    type: "text",
-    text:
-      "✅ *Tax Compliance Certificate*\n\n" +
-      "Enter your *KRA PIN* to check compliance status and download your TCC.\n\n" +
-      "Type *back* to return to the main menu.",
+    text: "💳 *Make Payment*\n\nSelect the service you are paying for:",
+    buttonLabel: "Select Service",
+    rows: PAYMENT_CATEGORIES,
   });
 }
 
 async function connectAgent(to: string): Promise<void> {
   resetSession(to);
+  const user = await findUserByPhone(to);
+  const nameLine = user ? `Name: *${user.name}*\n` : "";
+
   await sendMessage(to, {
     type: "text",
     text:
-      "👤 *Talk to Agent*\n\n" +
-      "You have been added to the support queue.\n" +
-      "A support officer will respond shortly during business hours (8am–5pm EAT).\n\n" +
-      "Your reference: *#" + to.slice(-6) + "*",
+      "👤 *Talk to an Agent*\n\n" +
+      "You have been added to the Millenium Solutions support queue.\n" +
+      "A support officer will respond during business hours.\n\n" +
+      nameLine +
+      `Reference: *#${to.slice(-6)}*\n` +
+      `Hours: ${COMPANY.hours}`,
   });
   await sendMessage(to, {
     type: "buttons",
-    text: "While you wait, you can browse other services:",
+    text: "While you wait, you can browse other options:",
     buttons: [BACK_BUTTON],
   });
 }
 
 async function handleServiceSelection(to: string, serviceId: string): Promise<void> {
+  if (serviceId.startsWith("svc_")) {
+    await showServiceDetail(to, serviceId);
+    return;
+  }
+
+  if (serviceId.startsWith("team_")) {
+    if (serviceId === "team") {
+      await showTeam(to);
+    } else {
+      await showTeamDepartment(to, serviceId);
+    }
+    return;
+  }
+
   switch (serviceId) {
     case "register":
       await startRegister(to);
       break;
-    case "file_returns":
-      await startFileReturns(to);
-      break;
-    case "pin_status":
-      await startPinCheck(to);
+    case "services":
+      await showServices(to);
       break;
     case "payments":
       await startPayments(to);
       break;
-    case "tcc":
-      await startTcc(to);
+    case "support":
+      await startSupport(to);
+      break;
+    case "contact":
+      await showContact(to);
+      break;
+    case "team":
+      await showTeam(to);
       break;
     case "agent":
       await connectAgent(to);
@@ -162,122 +276,6 @@ async function handleServiceSelection(to: string, serviceId: string): Promise<vo
   }
 }
 
-async function handleFileReturnsFlow(
-  to: string,
-  input: string,
-  normalized: string
-): Promise<void> {
-  const session = getSession(to);
-
-  if (session.flow === "file_returns_pin") {
-    if (!/^[A-Za-z]\d{9}[A-Za-z]$/.test(input)) {
-      await sendMessage(to, {
-        type: "text",
-        text: "That doesn't look like a valid KRA PIN. Please enter it in the format *A012345678X*.",
-      });
-      return;
-    }
-
-    setData(to, "pin", input.toUpperCase());
-    setFlow(to, "file_returns_otp");
-    await sendMessage(to, {
-      type: "text",
-      text:
-        `✅ PIN *${input.toUpperCase()}* received.\n\n` +
-        "We sent a 6-digit OTP to your registered mobile number.\n" +
-        "Enter the OTP to continue.",
-    });
-    return;
-  }
-
-  if (session.flow === "file_returns_otp") {
-    if (!/^\d{6}$/.test(input)) {
-      await sendMessage(to, {
-        type: "text",
-        text: "Please enter the 6-digit OTP sent to your phone.",
-      });
-      return;
-    }
-
-    setData(to, "otp", input);
-    setFlow(to, "file_returns_period");
-    await sendMessage(to, {
-      type: "list",
-      text: "OTP verified ✅\n\nSelect the tax period to file:",
-      buttonLabel: "Select Year",
-      rows: TAX_PERIODS,
-    });
-    return;
-  }
-
-  if (session.flow === "file_returns_period") {
-    if (normalized === "main_menu") {
-      await showMainMenu(to);
-      return;
-    }
-
-    const year = input.replace("period_", "");
-    setData(to, "period", year);
-    const pin = session.data.pin ?? "—";
-
-    await sendMessage(to, {
-      type: "buttons",
-      text:
-        "📋 *Confirm Filing*\n\n" +
-        `PIN: *${pin}*\n` +
-        `Period: *${year}*\n` +
-        `Return type: *Nil Return*\n\n` +
-        "Submit this return?",
-      buttons: YES_NO_BUTTONS,
-    });
-    return;
-  }
-
-  if (normalized === "confirm_yes") {
-    const pin = session.data.pin ?? "—";
-    const period = session.data.period ?? "—";
-    resetSession(to);
-    await sendMessage(to, {
-      type: "text",
-      text:
-        "🎉 *Return filed successfully!*\n\n" +
-        `PIN: *${pin}*\n` +
-        `Period: *${period}*\n` +
-        `Acknowledgement: *ACK-${Date.now().toString().slice(-8)}*\n\n` +
-        "Your nil return has been submitted. You will receive a confirmation shortly.",
-    });
-    await showMainMenu(to);
-    return;
-  }
-
-  if (normalized === "confirm_no" || normalized === "main_menu") {
-    await showMainMenu(to);
-  }
-}
-
-async function handlePinCheckFlow(to: string, input: string): Promise<void> {
-  if (!/^\d{6,8}$/.test(input)) {
-    await sendMessage(to, {
-      type: "text",
-      text: "Please enter a valid National ID number (6–8 digits).",
-    });
-    return;
-  }
-
-  resetSession(to);
-  await sendMessage(to, {
-    type: "text",
-    text:
-      "🔍 *PIN Lookup Result*\n\n" +
-      `ID: *${input}*\n` +
-      "Name: *Demo Taxpayer*\n" +
-      "KRA PIN: *A012345678X*\n" +
-      "Status: *Active*\n\n" +
-      "_This is demo data. Connect real KRA APIs for live lookups._",
-  });
-  await showMainMenu(to);
-}
-
 async function handlePaymentsFlow(
   to: string,
   input: string,
@@ -290,24 +288,19 @@ async function handlePaymentsFlow(
     return;
   }
 
-  if (!session.data.taxType) {
-    const taxLabels: Record<string, string> = {
-      pay_income: "Income Tax",
-      pay_vat: "VAT",
-      pay_paye: "PAYE",
-    };
-
-    if (!taxLabels[input]) {
+  if (!session.data.paymentCategory) {
+    const label = PAYMENT_LABELS[input];
+    if (!label) {
       await startPayments(to);
       return;
     }
 
-    setData(to, "taxType", taxLabels[input]);
+    setData(to, "paymentCategory", label);
     await sendMessage(to, {
       type: "text",
       text:
-        `💳 *${taxLabels[input]} Payment*\n\n` +
-        "Enter the *amount* you want to pay (in KES).\n\n" +
+        `💳 *${label} Payment*\n\n` +
+        "Enter the *amount* in KES.\n\n" +
         "Type *back* to return to the main menu.",
     });
     return;
@@ -322,15 +315,14 @@ async function handlePaymentsFlow(
     return;
   }
 
-  const taxType = session.data.taxType;
+  const category = session.data.paymentCategory;
   resetSession(to);
 
-  // Notify immediately so the user knows something is happening
   await sendMessage(to, {
     type: "text",
     text:
       "📱 *M-Pesa Payment Request*\n\n" +
-      `Tax type: *${taxType}*\n` +
+      `Service: *${category}*\n` +
       `Amount: *KES ${amount.toLocaleString()}*\n\n` +
       "An M-Pesa prompt has been sent to your phone.\n" +
       "Enter your *M-Pesa PIN* to complete the payment.\n\n" +
@@ -338,8 +330,8 @@ async function handlePaymentsFlow(
   });
 
   try {
-    const result = await initiateStkPush(to, amount, taxType);
-    registerPendingPayment(result.checkoutRequestId, to, taxType, amount);
+    const result = await initiateStkPush(to, amount, category);
+    registerPendingPayment(result.checkoutRequestId, to, category, amount);
     console.log(`STK Push sent for ${to} — CheckoutRequestID: ${result.checkoutRequestId}`);
   } catch (err) {
     console.error("STK Push failed from bot handler:", err);
@@ -354,28 +346,87 @@ async function handlePaymentsFlow(
   }
 }
 
-async function handleTccFlow(to: string, input: string): Promise<void> {
-  if (!/^[A-Za-z]\d{9}[A-Za-z]$/.test(input)) {
+async function handleSupportFlow(
+  to: string,
+  input: string,
+  normalized: string
+): Promise<void> {
+  const session = getSession(to);
+
+  if (session.flow === "support_category") {
+    if (normalized === "main_menu") {
+      await showMainMenu(to);
+      return;
+    }
+
+    const label = SUPPORT_LABELS[input];
+    if (!label) {
+      await startSupport(to);
+      return;
+    }
+
+    setData(to, "supportCategory", label);
+    setFlow(to, "support_description");
     await sendMessage(to, {
       type: "text",
-      text: "That doesn't look like a valid KRA PIN. Please enter it in the format *A012345678X*.",
+      text:
+        `🎫 *${label}*\n\n` +
+        "Please describe your issue or request in a few sentences.\n\n" +
+        "Type *back* to return to the main menu.",
     });
     return;
   }
 
-  resetSession(to);
-  await sendMessage(to, {
-    type: "text",
-    text:
-      "✅ *Compliance Status*\n\n" +
-      `PIN: *${input.toUpperCase()}*\n` +
-      "Status: *Compliant*\n" +
-      "Outstanding liabilities: *None*\n\n" +
-      "Your Tax Compliance Certificate is active.\n" +
-      `Certificate ID: *TCC-${Date.now().toString().slice(-8)}*\n\n` +
-      "_This is demo data. Connect real KRA APIs for live certificates._",
-  });
-  await showMainMenu(to);
+  if (session.flow === "support_description") {
+    if (input.length < 10) {
+      await sendMessage(to, {
+        type: "text",
+        text: "Please provide a bit more detail (at least 10 characters).",
+      });
+      return;
+    }
+
+    setData(to, "supportDescription", input);
+    setFlow(to, "support_confirm");
+    const category = session.data.supportCategory ?? "—";
+
+    await sendMessage(to, {
+      type: "buttons",
+      text:
+        "📋 *Confirm Support Request*\n\n" +
+        `Category: *${category}*\n` +
+        `Details: ${input}\n\n` +
+        "Submit this request?",
+      buttons: YES_NO_BUTTONS,
+    });
+    return;
+  }
+
+  if (session.flow === "support_confirm") {
+    if (normalized === "confirm_yes") {
+      const category = session.data.supportCategory ?? "General";
+      const description = session.data.supportDescription ?? "—";
+      const ticketId = `MS-${Date.now().toString().slice(-8)}`;
+      resetSession(to);
+
+      await sendMessage(to, {
+        type: "text",
+        text:
+          "✅ *Support Request Submitted*\n\n" +
+          `Ticket ID: *${ticketId}*\n` +
+          `Category: *${category}*\n` +
+          `Status: *Open*\n\n` +
+          "Our team will review your request and respond during business hours.\n" +
+          `For urgent matters, call ${COMPANY.phone}.`,
+      });
+      await showMainMenu(to);
+      return;
+    }
+
+    if (normalized === "confirm_no" || normalized === "main_menu") {
+      await showMainMenu(to);
+    }
+  }
 }
 
 async function handleActiveFlow(
@@ -398,19 +449,13 @@ async function handleActiveFlow(
       if (done) await showMainMenu(to);
       break;
     }
-    case "file_returns_pin":
-    case "file_returns_otp":
-    case "file_returns_period":
-      await handleFileReturnsFlow(to, input, normalized);
-      break;
-    case "pin_check_id":
-      await handlePinCheckFlow(to, input);
-      break;
     case "payments_amount":
       await handlePaymentsFlow(to, input, normalized);
       break;
-    case "tcc_pin":
-      await handleTccFlow(to, input);
+    case "support_category":
+    case "support_description":
+    case "support_confirm":
+      await handleSupportFlow(to, input, normalized);
       break;
     default:
       await showMainMenu(to);
@@ -443,16 +488,20 @@ export async function handleMessage(
   }
 
   if (session.flow === "idle") {
-    const serviceIds = new Set(MAIN_MENU_ROWS.map((row) => row.id));
-    if (serviceIds.has(input) || input === "main_menu") {
+    const menuIds = new Set(MAIN_MENU_ROWS.map((row) => row.id));
+    const serviceIds = new Set(SERVICE_CATALOG.map((row) => row.id));
+    const teamIds = new Set(TEAM_DEPARTMENTS.map((row) => row.id));
+    const allIds = new Set([...menuIds, ...serviceIds, ...teamIds, "main_menu", "team"]);
+
+    if (allIds.has(input)) {
       await handleServiceSelection(to, input);
       return;
     }
 
     const user = await findUserByPhone(to);
     const greeting = user
-      ? `Hi *${user.name}*! 👋 Type *menu* or tap below to see available services.`
-      : "Hi! 👋 Type *menu* or tap below to see available services.\n\n_New here? Select **Register** to create your profile._";
+      ? `Hi *${user.name}*! 👋 Welcome to *${COMPANY.name}* support.\n\nType *menu* or tap below to get started.`
+      : `Hi! 👋 Welcome to *${COMPANY.name}*.\n\n${COMPANY.tagline}\n\nType *menu* or tap below.\n\n_New here? Select **Register** to create your profile._`;
 
     await sendMessage(to, { type: "text", text: greeting });
     await showMainMenu(to);

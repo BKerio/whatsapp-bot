@@ -3,12 +3,10 @@ export type FlowStep =
   | "register_name"
   | "register_id"
   | "register_confirm"
-  | "file_returns_pin"
-  | "file_returns_otp"
-  | "file_returns_period"
-  | "pin_check_id"
   | "payments_amount"
-  | "tcc_pin";
+  | "support_category"
+  | "support_description"
+  | "support_confirm";
 
 export interface Session {
   flow: FlowStep;

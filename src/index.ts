@@ -1,9 +1,9 @@
 import "dotenv/config";
 import express from "express";
-import { handleMessage } from "./bot/handler.js";
-import { env } from "./env.js";
-import { markAsRead } from "./whatsapp/client.js";
-import type { IncomingMessage, WebhookPayload } from "./whatsapp/types.js";
+import { handleMessage } from "@/bot/handler.js";
+import { env } from "@/env.js";
+import { markAsRead } from "@/whatsapp/client.js";
+import type { IncomingMessage, WebhookPayload } from "@/whatsapp/types.js";
 
 const app = express();
 

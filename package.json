@@ -5,7 +5,7 @@
   "main": "dist/index.js",
   "type": "module",
   "scripts": {
-    "build": "tsc",
+    "build": "tsc && tsc-alias",
     "start": "node dist/index.js",
     "dev": "tsx watch src/index.ts"
   },
@@ -21,6 +21,7 @@
     "@types/express": "^5.0.0",
     "@types/node": "^24.13.0",
     "nodemon": "^3.1.14",
+    "tsc-alias": "^1.8.16",
     "tsx": "^4.20.0",
     "typescript": "^5.8.0"
   }

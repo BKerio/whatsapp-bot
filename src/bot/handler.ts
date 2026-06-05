@@ -1,5 +1,5 @@
-import { sendMessage } from "../whatsapp/client.js";
-import type { IncomingMessage } from "../whatsapp/types.js";
+import { sendMessage } from "@/whatsapp/client.js";
+import type { IncomingMessage } from "@/whatsapp/types.js";
 import {
   BACK_BUTTON,
   HELP_TEXT,
@@ -9,8 +9,8 @@ import {
   PAYMENT_TYPES,
   TAX_PERIODS,
   YES_NO_BUTTONS,
-} from "./menus.js";
-import { getSession, resetSession, setData, setFlow } from "./session.js";
+} from "@/bot/menus.js";
+import { getSession, resetSession, setData, setFlow } from "@/bot/session.js";
 
 function extractInput(message: IncomingMessage): string {
   if (message.type === "text") {

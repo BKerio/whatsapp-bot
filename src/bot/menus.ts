@@ -1,4 +1,4 @@
-import type { ListRow, ReplyButton } from "../whatsapp/types.js";
+import type { ListRow, ReplyButton } from "@/whatsapp/types.js";
 
 export const MENU_TRIGGERS = new Set([
   "hi",

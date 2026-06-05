@@ -13,6 +13,8 @@ import {
   YES_NO_BUTTONS,
 } from "@/bot/menus.js";
 import { getSession, resetSession, setData, setFlow } from "@/bot/session.js";
+import { initiateStkPush } from "@/services/mpesa.js";
+import { registerPendingPayment } from "@/bot/mpesa-bridge.js";
 
 function extractInput(message: IncomingMessage): string {
   if (message.type === "text") {
@@ -321,21 +323,35 @@ async function handlePaymentsFlow(
   }
 
   const taxType = session.data.taxType;
-  const slipId = `PAY-${Date.now().toString().slice(-8)}`;
   resetSession(to);
 
+  // Notify immediately so the user knows something is happening
   await sendMessage(to, {
     type: "text",
     text:
-      "💳 *Payment Slip Generated*\n\n" +
+      "📱 *M-Pesa Payment Request*\n\n" +
       `Tax type: *${taxType}*\n` +
-      `Amount: *KES ${amount.toLocaleString()}*\n` +
-      `Slip ID: *${slipId}*\n` +
-      `Paybill: *572572*\n` +
-      `Account: *${slipId}*\n\n` +
-      "Use these details to pay via M-PESA or your bank.",
+      `Amount: *KES ${amount.toLocaleString()}*\n\n` +
+      "An M-Pesa prompt has been sent to your phone.\n" +
+      "Enter your *M-Pesa PIN* to complete the payment.\n\n" +
+      "_You will receive a confirmation message here once done._",
   });
-  await showMainMenu(to);
+
+  try {
+    const result = await initiateStkPush(to, amount, taxType);
+    registerPendingPayment(result.checkoutRequestId, to, taxType, amount);
+    console.log(`STK Push sent for ${to} — CheckoutRequestID: ${result.checkoutRequestId}`);
+  } catch (err) {
+    console.error("STK Push failed from bot handler:", err);
+    await sendMessage(to, {
+      type: "text",
+      text:
+        "❌ *Payment Request Failed*\n\n" +
+        "We could not reach M-Pesa at this time.\n" +
+        "Please try again or select *Talk to Agent* for help.",
+    });
+    await showMainMenu(to);
+  }
 }
 
 async function handleTccFlow(to: string, input: string): Promise<void> {

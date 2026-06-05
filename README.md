@@ -1,20 +1,20 @@
 # Shuru Bot 🤖
 
-> A WhatsApp chatbot for KRA tax and compliance services — built with the Meta Cloud API, Express, and TypeScript.
+> A WhatsApp chatbot for KRA tax and compliance services — with M-Pesa STK Push payments, real-time Socket.IO updates, and MongoDB persistence. Built with the Meta Cloud API, Express, and TypeScript.
 
 ---
 
 ## Overview
 
-**Shuru** is a conversational WhatsApp bot that guides users through common Kenya Revenue Authority (KRA) tax self-service tasks. It connects to the [Meta WhatsApp Cloud API](https://developers.facebook.com/docs/whatsapp/cloud-api) via webhooks and supports fully guided, multi-step conversation flows.
+**Shuru** is a conversational WhatsApp bot that guides users through common Kenya Revenue Authority (KRA) tax self-service tasks. It connects to the [Meta WhatsApp Cloud API](https://developers.facebook.com/docs/whatsapp/cloud-api) via webhooks and supports fully guided, multi-step conversation flows. Payments are handled via the [Safaricom Daraja (M-Pesa) API](https://developer.safaricom.co.ke/) with real-time callback notifications pushed to clients over Socket.IO.
 
-### Available Services
+### Available Bot Services
 
 | Service | Description |
 |---|---|
 | 📄 **File Returns** | Guided nil return filing with KRA PIN + OTP verification |
 | 🔍 **Check PIN Status** | Look up a KRA PIN by National ID number |
-| 💳 **Payments** | Generate an M-PESA payment slip for Income Tax, VAT, or PAYE |
+| 💳 **Payments** | Generate an M-Pesa STK Push payment for Income Tax, VAT, or PAYE |
 | ✅ **Tax Compliance (TCC)** | Check compliance status and retrieve a Tax Compliance Certificate |
 | 👤 **Talk to Agent** | Add yourself to the human support queue |
 | 📋 **Help** | Usage instructions for the bot |
@@ -23,12 +23,16 @@
 
 ## Tech Stack
 
-- **Runtime**: Node.js (ESM)
-- **Language**: TypeScript 5
-- **Framework**: Express 5
-- **HTTP Client**: Axios
-- **Dev Server**: `tsx --watch`
-- **Build**: `tsc` + `tsc-alias` (for path aliases)
+| Layer | Technology |
+|---|---|
+| Runtime | Node.js (ESM) |
+| Language | TypeScript 5 |
+| Framework | Express 5 |
+| Database | MongoDB via Mongoose 8 |
+| Real-time | Socket.IO 4 |
+| HTTP Client | Axios |
+| Dev Server | `tsx --watch` |
+| Build | `tsc` + `tsc-alias` |
 
 ---
 
@@ -36,15 +40,19 @@
 
 ```
 src/
-├── index.ts              # Express server, webhook verification & routing
-├── env.ts                # Typed environment variable loader
+├── index.ts              # Server entry — Express, Socket.IO, MongoDB, routes
+├── env.ts                # Typed environment variable loader (WhatsApp vars)
 ├── bot/
-│   ├── handler.ts        # Message routing & conversation flow logic
+│   ├── handler.ts        # WhatsApp message routing & conversation flow logic
 │   ├── menus.ts          # Menu content, labels, and button definitions
 │   └── session.ts        # In-memory session state per phone number
-└── whatsapp/
-    ├── client.ts         # WhatsApp Cloud API (send messages, mark as read)
-    └── types.ts          # TypeScript types for webhooks & messages
+├── whatsapp/
+│   ├── client.ts         # WhatsApp Cloud API (send messages, mark as read)
+│   └── types.ts          # TypeScript types for webhooks & messages
+├── routes/
+│   └── mpesa.ts          # M-Pesa STK Push, callback, status & transaction routes
+└── models/
+    └── Payments.ts       # Mongoose model for M-Pesa payment transactions
 ```
 
 ---
@@ -52,9 +60,10 @@ src/
 ## Prerequisites
 
 - Node.js ≥ 18
+- MongoDB (local or [MongoDB Atlas](https://www.mongodb.com/atlas))
 - A [Meta Developer Account](https://developers.facebook.com/) with a WhatsApp Business App
-- A WhatsApp Business phone number (test number is fine)
-- [ngrok](https://ngrok.com/) (for local development)
+- A [Safaricom Daraja Account](https://developer.safaricom.co.ke/) (sandbox is fine)
+- [ngrok](https://ngrok.com/) (for local webhook exposure)
 
 ---
 
@@ -77,17 +86,28 @@ cp .env.example .env
 Edit `.env` with your credentials:
 
 ```env
+# WhatsApp
 WHATSAPP_TOKEN=your_whatsapp_access_token
 WHATSAPP_PHONE_NUMBER_ID=your_phone_number_id
 WHATSAPP_VERIFY_TOKEN=your_webhook_verify_token
-PORT=3000
-```
 
-| Variable | Where to find it |
-|---|---|
-| `WHATSAPP_TOKEN` | Meta App Dashboard → WhatsApp → API Setup → Temporary/Permanent Token |
-| `WHATSAPP_PHONE_NUMBER_ID` | Meta App Dashboard → WhatsApp → API Setup → Phone Number ID |
-| `WHATSAPP_VERIFY_TOKEN` | Any secret string you choose — used to verify your webhook with Meta |
+# Server
+PORT=3000
+CLIENT_ORIGIN=http://localhost:3000
+
+# MongoDB
+MONGO_URI=mongodb://localhost:27017/shuru-bot
+
+# M-Pesa (Daraja API)
+MPESA_BASE_URL=https://sandbox.safaricom.co.ke
+MPESA_CONSUMER_KEY=your_consumer_key
+MPESA_CONSUMER_SECRET=your_consumer_secret
+MPESA_SHORTCODE=your_shortcode
+MPESA_PASSKEY=your_passkey
+TILL_NO=your_till_number
+MPESA_TRANSACTIONTYPE=CustomerBuyGoodsOnline
+MPESA_CALLBACK_URL=https://your-ngrok-url/api/stkpush/callback
+```
 
 ### 3. Start the dev server
 
@@ -99,48 +119,100 @@ The server starts on `http://localhost:3000`.
 
 ---
 
-## Connecting to Meta (Webhook Setup)
+## WhatsApp Webhook Setup
 
 1. **Expose your local server** using ngrok:
    ```bash
    ngrok http 3000
    ```
-   Copy the `https://...ngrok-free.app` URL.
+2. In the [Meta Developer Portal](https://developers.facebook.com/), go to **WhatsApp → Configuration → Webhook** and set:
+   - **Callback URL**: `https://<ngrok-url>/api/whatsapp/webhook`
+   - **Verify Token**: your `WHATSAPP_VERIFY_TOKEN`
+3. Click **Verify and Save**, then subscribe to the `messages` webhook field.
+4. Send `hi` on WhatsApp — Shuru will respond with the main menu.
 
-2. **Configure your webhook** in the [Meta Developer Portal](https://developers.facebook.com/):
-   - Go to **WhatsApp → Configuration → Webhook**
-   - Set **Callback URL** to:
-     ```
-     https://<your-ngrok-url>/api/whatsapp/webhook
-     ```
-   - Set **Verify Token** to your `WHATSAPP_VERIFY_TOKEN`
-   - Click **Verify and Save**
+> 💡 Visit `http://localhost:3000/setup` for a step-by-step reminder directly from the running server.
 
-3. **Subscribe to the `messages` webhook field** under Webhook Fields → Manage.
+---
 
-4. **Test it**: Send `hi` on WhatsApp to your test number — Shuru will respond with the main menu.
+## M-Pesa Integration
 
-> 💡 Visit `http://localhost:3000/setup` for a step-by-step reminder directly from the server.
+### STK Push Flow
+
+```
+Client → POST /api/stkpush  →  Daraja API (STK Push)
+                                      ↓ (user pays on phone)
+Daraja → POST /api/stkpush/callback
+              ↓
+         Save to MongoDB
+              ↓
+         io.emit('transaction_update') → Client room
+```
+
+### Real-time Updates with Socket.IO
+
+After initiating an STK Push, the client should:
+
+1. Connect to the Socket.IO server
+2. Emit `join_checkout` with the `checkoutRequestId` returned from the STK push
+3. Listen for `transaction_update` events
+
+```js
+const socket = io('http://localhost:3000');
+
+socket.emit('join_checkout', { checkoutRequestId: 'ws_xxxxxxxx' });
+
+socket.on('transaction_update', (data) => {
+  console.log(data.status); // 'success' | 'cancelled' | 'timeout' | 'failure' ...
+  console.log(data.receipt);
+  console.log(data.amount);
+});
+```
+
+### Transaction Status Values
+
+| Status | Meaning |
+|---|---|
+| `success` | Payment completed (ResultCode 0) |
+| `cancelled` | User cancelled on phone (ResultCode 1032) |
+| `timeout` | Session timed out (ResultCode 1037) |
+| `wrong_pin` | Wrong M-Pesa PIN entered |
+| `insufficient_funds` | Insufficient balance |
+| `failure` | Any other failure |
 
 ---
 
 ## API Endpoints
 
+### WhatsApp
+
 | Method | Path | Description |
 |---|---|---|
-| `GET` | `/` | Service info and quick links |
-| `GET` | `/health` | Health check (`{"status":"ok"}`) |
+| `GET` | `/api/whatsapp/webhook` | Meta webhook verification |
+| `POST` | `/api/whatsapp/webhook` | Incoming WhatsApp messages |
+
+### M-Pesa
+
+| Method | Path | Description |
+|---|---|---|
+| `POST` | `/api/stkpush` | Initiate M-Pesa STK Push — body: `{ phone, amount }` |
+| `POST` | `/api/stkpush/callback` | Safaricom callback (set as `MPESA_CALLBACK_URL`) |
+| `GET` | `/api/stkpush/status/:checkoutRequestId` | Poll transaction status |
+| `GET` | `/api/transactions` | List last 50 transactions |
+
+### Utility
+
+| Method | Path | Description |
+|---|---|---|
+| `GET` | `/` | Service info |
+| `GET` | `/health` | Health check (includes DB status) |
 | `GET` | `/setup` | Webhook setup instructions |
-| `GET` | `/webhook` | Meta webhook verification |
-| `POST` | `/webhook` | Incoming WhatsApp messages |
-| `GET` | `/api/whatsapp/webhook` | Meta webhook verification (primary) |
-| `POST` | `/api/whatsapp/webhook` | Incoming WhatsApp messages (primary) |
 
 ---
 
-## Conversation Flows
+## Conversation Flows (WhatsApp Bot)
 
-Shuru uses a simple in-memory finite-state machine to track each user's conversation. Sessions are keyed by phone number and reset on completion or when the user types `back`, `cancel`, or `menu`.
+Shuru uses an in-memory finite-state machine keyed by phone number:
 
 ```
 idle
@@ -150,9 +222,7 @@ idle
  └── tcc          → tcc_pin → idle
 ```
 
-### Trigger Words
-
-The bot responds to these keywords from any state:
+**Trigger words** (work from any state):
 
 | Keyword | Action |
 |---|---|
@@ -174,21 +244,49 @@ npm start       # Run compiled output from dist/
 
 ## Environment Variables Reference
 
+### WhatsApp
+
+| Variable | Required | Description |
+|---|---|---|
+| `WHATSAPP_TOKEN` | ✅ | Meta API bearer token |
+| `WHATSAPP_PHONE_NUMBER_ID` | ✅ | WhatsApp phone number ID |
+| `WHATSAPP_VERIFY_TOKEN` | ✅ | Webhook verification secret |
+
+### Server
+
 | Variable | Required | Default | Description |
 |---|---|---|---|
-| `WHATSAPP_TOKEN` | ✅ | — | Meta API bearer token |
-| `WHATSAPP_PHONE_NUMBER_ID` | ✅ | — | WhatsApp phone number ID |
-| `WHATSAPP_VERIFY_TOKEN` | ✅ | — | Webhook verification secret |
 | `PORT` | ❌ | `3000` | HTTP server port |
+| `CLIENT_ORIGIN` | ❌ | `*` | Allowed CORS origin for Socket.IO |
+
+### MongoDB
+
+| Variable | Required | Description |
+|---|---|---|
+| `MONGO_URI` | ✅ | MongoDB connection string |
+
+### M-Pesa
+
+| Variable | Required | Description |
+|---|---|---|
+| `MPESA_BASE_URL` | ✅ | `https://sandbox.safaricom.co.ke` or production URL |
+| `MPESA_CONSUMER_KEY` | ✅ | Daraja app consumer key |
+| `MPESA_CONSUMER_SECRET` | ✅ | Daraja app consumer secret |
+| `MPESA_SHORTCODE` | ✅ | Business shortcode |
+| `MPESA_PASSKEY` | ✅ | Lipa Na M-Pesa passkey |
+| `TILL_NO` | ✅ | Till/PayBill number (PartyB) |
+| `MPESA_TRANSACTIONTYPE` | ✅ | `CustomerBuyGoodsOnline` or `CustomerPayBillOnline` |
+| `MPESA_CALLBACK_URL` | ✅ | Public URL Safaricom will POST results to |
 
 ---
 
 ## Notes & Limitations
 
-- **Session storage is in-memory** — all sessions are lost on server restart. For production, replace the `Map` in `session.ts` with a Redis or database-backed store.
-- **Demo data** — PIN lookups and TCC responses return mock data. Connect real KRA APIs to go live.
-- **OTP verification** — OTP sending is simulated. Integrate an SMS gateway for real OTP delivery.
-- **No persistence** — there is currently no logging, analytics, or message history store.
+- **Session storage is in-memory** — WhatsApp sessions are lost on server restart. Replace the `Map` in `session.ts` with Redis or a DB store for production.
+- **Demo data** — PIN lookups and TCC responses return mock data. Integrate real KRA APIs to go live.
+- **OTP verification** — OTP sending is simulated. Integrate an SMS gateway (e.g., Africa's Talking) for real delivery.
+- **M-Pesa sandbox** — Daraja sandbox uses test credentials and simulated payments. Switch `MPESA_BASE_URL` to `https://api.safaricom.co.ke` for production.
+- **Callback URL must be public** — Safaricom cannot reach `localhost`. Always use an ngrok URL (or deployed server) for `MPESA_CALLBACK_URL`.
 
 ---
 

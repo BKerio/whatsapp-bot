@@ -3,6 +3,54 @@ import { saveUser, findUserByPhone } from "@/models/user.js";
 import { sendMessage } from "@/whatsapp/client.js";
 import { YES_NO_BUTTONS } from "@/bot/menus.js";
 import { getSession, resetSession, setData, setFlow } from "@/bot/session.js";
+import {
+  requestRegistrationOtp,
+  verifyRegistrationOtp,
+} from "@/services/otp.js";
+
+async function sendOtpAndPrompt(to: string): Promise<boolean> {
+  try {
+    await requestRegistrationOtp(to);
+    setFlow(to, "register_otp");
+    await sendMessage(to, {
+      type: "text",
+      text:
+        "📲 *Phone Verification*\n\n" +
+        `We sent a 6-digit verification code to *${to}* via SMS.\n\n` +
+        "Enter the code to continue.\n\n" +
+        "Type *back* to return to the main menu.",
+    });
+    return true;
+  } catch (err) {
+    console.error("Failed to send registration OTP:", err);
+    await sendMessage(to, {
+      type: "text",
+      text:
+        "❌ *OTP Not Sent*\n\n" +
+        "We could not send a verification code to your phone.\n" +
+        "Please try again in a moment or contact support.",
+    });
+    return false;
+  }
+}
+
+async function showRegistrationConfirm(to: string): Promise<void> {
+  const session = getSession(to);
+  const name = session.data.name ?? "—";
+  const idNumber = session.data.idNumber ?? "—";
+
+  setFlow(to, "register_confirm");
+  await sendMessage(to, {
+    type: "buttons",
+    text:
+      "📋 *Confirm Registration*\n\n" +
+      `Name: *${name}*\n` +
+      `Phone: *${to}* ✅ verified\n` +
+      `ID Number: *${idNumber}*\n\n` +
+      "Save this information?",
+    buttons: YES_NO_BUTTONS,
+  });
+}
 
 export async function startRegister(to: string): Promise<void> {
   const existing = await findUserByPhone(to);
@@ -16,7 +64,7 @@ export async function startRegister(to: string): Promise<void> {
         `Name: *${existing.name}*\n` +
         `Phone: *${existing.phone}*\n` +
         `ID Number: *${existing.idNumber}*\n\n` +
-        "To update your details, start registration again and confirm the new info.",
+        "To update your details, complete registration again with OTP verification.",
     });
     setFlow(to, "register_name");
     await sendMessage(to, {
@@ -75,19 +123,44 @@ export async function handleRegisterFlow(
     }
 
     setData(to, "idNumber", input);
-    setFlow(to, "register_confirm");
-    const name = session.data.name ?? "—";
+    await sendOtpAndPrompt(to);
+    return false;
+  }
 
-    await sendMessage(to, {
-      type: "buttons",
-      text:
-        "📋 *Confirm Registration*\n\n" +
-        `Name: *${name}*\n` +
-        `Phone: *${to}*\n` +
-        `ID Number: *${input}*\n\n` +
-        "Save this information?",
-      buttons: YES_NO_BUTTONS,
-    });
+  if (session.flow === "register_otp") {
+    if (normalized === "resend") {
+      await sendOtpAndPrompt(to);
+      return false;
+    }
+
+    if (!/^\d{6}$/.test(input)) {
+      await sendMessage(to, {
+        type: "text",
+        text: "Please enter the 6-digit code sent to your phone.",
+      });
+      return false;
+    }
+
+    const result = await verifyRegistrationOtp(to, input);
+
+    if (result === "expired") {
+      await sendMessage(to, {
+        type: "text",
+        text: "⏰ That code has expired. Reply *resend* to get a new OTP.",
+      });
+      return false;
+    }
+
+    if (result === "invalid") {
+      await sendMessage(to, {
+        type: "text",
+        text: "❌ Invalid code. Please check and try again, or reply *resend* for a new OTP.",
+      });
+      return false;
+    }
+
+    setData(to, "phoneVerified", "true");
+    await showRegistrationConfirm(to);
     return false;
   }
 
@@ -96,7 +169,7 @@ export async function handleRegisterFlow(
       const name = session.data.name;
       const idNumber = session.data.idNumber;
 
-      if (!name || !idNumber) {
+      if (!name || !idNumber || session.data.phoneVerified !== "true") {
         await startRegister(to);
         return false;
       }

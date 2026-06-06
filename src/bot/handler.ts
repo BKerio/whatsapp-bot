@@ -449,6 +449,7 @@ async function handleActiveFlow(
   switch (flow) {
     case "register_name":
     case "register_id":
+    case "register_otp":
     case "register_confirm": {
       const done = await handleRegisterFlow(to, input, normalized);
       if (done) await showMainMenu(to);

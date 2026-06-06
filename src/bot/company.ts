@@ -4,10 +4,10 @@ export const COMPANY_PROFILE_FILENAME = "Millenium Solutions_Business Profile.pd
 
 export const COMPANY = {
   name: "Millenium Solutions EA Ltd",
-  tagline: "Powering Africa's Digital Future",
+  tagline: "Your Technology Partner",
   motto: "Efficiently Automating Your Business Processes.",
   email: "info@millenium.co.ke",
-  phone: "+254 715 844 844",
+  phone: "+254716774477",
   address: "Manga House - Ground Floor Wing B, 5 Kiambere Road, Upper Hill, Nairobi, Kenya",
   website: "https://www.millenium.co.ke",
   hours: "Monday–Friday, 8:00am–5:00pm EAT",
@@ -170,6 +170,7 @@ export const TEAM_BY_DEPARTMENT: Record<string, TeamMember[]> = {
   team_engineering: [
     { name: "Clinton Kiptoo", role: "Engineering Lead" },
     { name: "Erickson Kimtai", role: "Network/Embedded Systems/Software Engineering" },
+    { name: "Eliud Mugu", role: "DevOps Engineer" },
     { name: "Caleb Salat", role: "Software Developer" },
     { name: "Emmanuel Lugadilu", role: "Software Developer" },
     { name: "Dalton", role: "Internship" },

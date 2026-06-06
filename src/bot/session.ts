@@ -2,6 +2,7 @@ export type FlowStep =
   | "idle"
   | "register_name"
   | "register_id"
+  | "register_otp"
   | "register_confirm"
   | "payments_amount"
   | "support_category"

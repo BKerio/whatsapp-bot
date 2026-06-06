@@ -337,7 +337,7 @@ async function handlePaymentsFlow(
   try {
     const result = await initiateStkPush(to, amount, category);
     registerPendingPayment(result.checkoutRequestId, to, category, amount);
-    console.log(`STK Push sent for ${to} — CheckoutRequestID: ${result.checkoutRequestId}`);
+    console.log(`STK Push sent for ${to} - CheckoutRequestID: ${result.checkoutRequestId}`);
   } catch (err) {
     console.error("STK Push failed from bot handler:", err);
     await sendMessage(to, {
@@ -393,7 +393,7 @@ async function handleSupportFlow(
 
     setData(to, "supportDescription", input);
     setFlow(to, "support_confirm");
-    const category = session.data.supportCategory ?? "—";
+    const category = session.data.supportCategory ?? "N/A";
 
     await sendMessage(to, {
       type: "buttons",
@@ -410,7 +410,7 @@ async function handleSupportFlow(
   if (session.flow === "support_confirm") {
     if (normalized === "confirm_yes") {
       const category = session.data.supportCategory ?? "General";
-      const description = session.data.supportDescription ?? "—";
+      const description = session.data.supportDescription ?? "N/A";
       const ticketId = `MS-${Date.now().toString().slice(-8)}`;
       resetSession(to);
 

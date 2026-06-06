@@ -24,7 +24,7 @@ export async function sendCompanyProfile(to: string): Promise<boolean> {
       to,
       filePath,
       "Millenium_Solutions_Business_Profile.pdf",
-      `${COMPANY.name} — Company Profile`
+      `${COMPANY.name} - Company Profile`
     );
 
     await sendMessage(to, {

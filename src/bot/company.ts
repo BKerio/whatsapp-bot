@@ -184,7 +184,7 @@ export const TEAM_BY_DEPARTMENT: Record<string, TeamMember[]> = {
 };
 
 export function formatTeamList(title: string, members: TeamMember[]): string {
-  const lines = members.map((m) => `• *${m.name}* — ${m.role}`);
+  const lines = members.map((m) => `• *${m.name}* - ${m.role}`);
   return `👥 *${title}*\n\n${lines.join("\n")}`;
 }
 

@@ -1,7 +1,7 @@
 {
   "name": "bot",
   "version": "1.0.0",
-  "description": "Shuru — WhatsApp tax & compliance bot with M-Pesa integration",
+  "description": "Millenium Solutions WhatsApp customer support bot with M-Pesa integration",
   "main": "dist/index.js",
   "type": "module",
   "scripts": {

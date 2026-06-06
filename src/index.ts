@@ -126,7 +126,7 @@ app.get('/', (_req, res) => {
   res.json({
     service: 'millenium-support',
     company: COMPANY.name,
-    message: 'Millenium Solutions EA Ltd — WhatsApp Customer Support',
+    message: 'Millenium Solutions EA Ltd - WhatsApp Customer Support',
     health: '/health',
     setup: '/setup',
   });

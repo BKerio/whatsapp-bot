@@ -36,8 +36,8 @@ async function sendOtpAndPrompt(to: string): Promise<boolean> {
 
 async function showRegistrationConfirm(to: string): Promise<void> {
   const session = getSession(to);
-  const name = session.data.name ?? "—";
-  const idNumber = session.data.idNumber ?? "—";
+  const name = session.data.name ?? "N/A";
+  const idNumber = session.data.idNumber ?? "N/A";
 
   setFlow(to, "register_confirm");
   await sendMessage(to, {

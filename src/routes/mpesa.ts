@@ -38,7 +38,7 @@ const getAccessToken = async (): Promise<string> => {
     return response.data['access_token'] as string;
   } catch (err: unknown) {
     const e = err as { response?: { data: unknown }; message: string };
-    console.error('Failed to obtain M-Pesa access token:', e?.response?.data || e.message);
+    console.error('Failed to generate M-Pesa access token:', e?.response?.data || e.message);
     throw err;
   }
 };

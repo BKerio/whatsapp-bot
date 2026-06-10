@@ -1,6 +1,6 @@
 import axios, { isAxiosError } from "axios";
-import { env } from "@/env.js";
-import type { ListRow, ReplyButton } from "@/whatsapp/types.js";
+import { env } from "@/env";
+import type { ListRow, ReplyButton } from "@/whatsapp/types";
 
 const API_BASE = `https://graph.facebook.com/v20.0/${env.phoneNumberId}`;
 

@@ -1,6 +1,6 @@
-import { findUserByPhone } from "@/models/user.js";
-import { handleRegisterFlow, startRegister } from "@/bot/register.js";
-import { sendCompanyProfile } from "@/bot/profile.js";
+import { findUserByPhone } from "@/models/user";
+import { handleRegisterFlow, startRegister } from "@/bot/register";
+import { sendCompanyProfile } from "@/bot/profile";
 import {
   COMPANY,
   PAYMENT_CATEGORIES,
@@ -14,9 +14,9 @@ import {
   TEAM_DEPARTMENTS,
   formatFullTeamDirectory,
   formatTeamList,
-} from "@/bot/company.js";
-import { sendMessage } from "@/whatsapp/client.js";
-import type { IncomingMessage } from "@/whatsapp/types.js";
+} from "@/bot/company";
+import { sendMessage } from "@/whatsapp/client";
+import type { IncomingMessage } from "@/whatsapp/types";
 import {
   BACK_BUTTON,
   HELP_TEXT,
@@ -24,10 +24,10 @@ import {
   MAIN_MENU_TEXT,
   MENU_TRIGGERS,
   YES_NO_BUTTONS,
-} from "@/bot/menus.js";
-import { getSession, resetSession, setData, setFlow } from "@/bot/session.js";
-import { initiateStkPush } from "@/services/mpesa.js";
-import { registerPendingPayment } from "@/bot/mpesa-bridge.js";
+} from "@/bot/menus";
+import { getSession, resetSession, setData, setFlow } from "@/bot/session";
+import { initiateStkPush } from "@/services/mpesa";
+import { registerPendingPayment } from "@/bot/mpesa-bridge";
 
 function extractInput(message: IncomingMessage): string {
   if (message.type === "text") {

@@ -1,7 +1,7 @@
 import { readFile } from "fs/promises";
 import path from "path";
 import axios, { isAxiosError } from "axios";
-import { env } from "@/env.js";
+import { env } from "@/env";
 
 const API_BASE = `https://graph.facebook.com/v20.0/${env.phoneNumberId}`;
 

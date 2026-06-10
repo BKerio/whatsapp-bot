@@ -1,8 +1,8 @@
 import express, { Request, Response } from 'express';
 import axios from 'axios';
-import MpesaPayment from '@/models/Payments.js';
-import { resolvePendingPayment } from '@/bot/mpesa-bridge.js';
-import { sendMessage } from '@/whatsapp/client.js';
+import MpesaPayment from '@/models/Payments';
+import { resolvePendingPayment } from '@/bot/mpesa-bridge';
+import { sendMessage } from '@/whatsapp/client';
 import 'dotenv/config';
 
 const router = express.Router();

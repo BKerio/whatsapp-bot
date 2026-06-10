@@ -1,5 +1,5 @@
-import { createOtp, verifyOtp as verifyOtpRecord } from "@/models/otp.js";
-import { sendSMS } from "@/services/sms.js";
+import { createOtp, verifyOtp as verifyOtpRecord } from "@/models/otp";
+import { sendSMS } from "@/services/sms";
 
 export async function requestRegistrationOtp(phone: string): Promise<void> {
   const code = await createOtp(phone);

@@ -1,8 +1,8 @@
 import path from "path";
 import { access } from "fs/promises";
-import { COMPANY, COMPANY_PROFILE_FILENAME } from "@/bot/company.js";
-import { sendDocument } from "@/whatsapp/media.js";
-import { sendMessage } from "@/whatsapp/client.js";
+import { COMPANY, COMPANY_PROFILE_FILENAME } from "@/bot/company";
+import { sendDocument } from "@/whatsapp/media";
+import { sendMessage } from "@/whatsapp/client";
 
 export async function resolveCompanyProfilePath(): Promise<string> {
   const filePath = path.join(process.cwd(), "src", COMPANY_PROFILE_FILENAME);

@@ -1,4 +1,4 @@
-import type { ListRow } from "@/whatsapp/types.ts";
+import type { ListRow } from "@/whatsapp/types";
 
 export const COMPANY_PROFILE_FILENAME = "Millenium Solutions_Business Profile.pdf";
 

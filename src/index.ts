@@ -4,13 +4,13 @@ import http from 'http';
 import cors from 'cors';
 import mongoose from 'mongoose';
 import { Server } from 'socket.io';
-import { handleMessage } from '@/bot/handler.js';
-import { connectDb } from '@/db/connect.js';
-import { env } from '@/env.js';
-import { markAsRead } from '@/whatsapp/client.js';
-import type { IncomingMessage, WebhookPayload } from '@/whatsapp/types.js';
-import mpesaRoutes from '@/routes/mpesa.js';
-import { COMPANY } from '@/bot/company.js';
+import { handleMessage } from '@/bot/handler';
+import { connectDb } from '@/db/connect';
+import { env } from '@/env';
+import { markAsRead } from '@/whatsapp/client';
+import type { IncomingMessage, WebhookPayload } from '@/whatsapp/types';
+import mpesaRoutes from '@/routes/mpesa';
+import { COMPANY } from '@/bot/company';
 
 const app = express();
 

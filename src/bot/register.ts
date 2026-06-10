@@ -1,12 +1,12 @@
-import { COMPANY } from "@/bot/company.js";
-import { saveUser, findUserByPhone } from "@/models/user.js";
-import { sendMessage } from "@/whatsapp/client.js";
-import { YES_NO_BUTTONS } from "@/bot/menus.js";
-import { getSession, resetSession, setData, setFlow } from "@/bot/session.js";
+import { COMPANY } from "@/bot/company";
+import { saveUser, findUserByPhone } from "@/models/user";
+import { sendMessage } from "@/whatsapp/client";
+import { YES_NO_BUTTONS } from "@/bot/menus";
+import { getSession, resetSession, setData, setFlow } from "@/bot/session";
 import {
   requestRegistrationOtp,
   verifyRegistrationOtp,
-} from "@/services/otp.js";
+} from "@/services/otp";
 
 async function sendOtpAndPrompt(to: string): Promise<boolean> {
   try {

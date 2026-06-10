@@ -1,5 +1,5 @@
-import { COMPANY } from "@/bot/company.js";
-import type { ListRow, ReplyButton } from "@/whatsapp/types.js";
+import { COMPANY } from "@/bot/company";
+import type { ListRow, ReplyButton } from "@/whatsapp/types";
 
 export const MENU_TRIGGERS = new Set([
   "hi",

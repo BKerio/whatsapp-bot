@@ -186,7 +186,7 @@ router.post('/stkpush/callback', async (req: Request, res: Response) => {
         await sendMessage(pending.phone, {
           type: 'text',
           text:
-            '❌ *Payment Failed*\n\n' +
+            '❌ *Mpesa Payment Failed*\n\n' +
             `${friendlyReason[statusStr] ?? ResultDesc}\n\n` +
             'Type *menu* to try again or select *Talk to Agent* for help.',
         });

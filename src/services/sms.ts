@@ -9,7 +9,7 @@ export async function sendSMS({ mobilePhone, smsText }: SendSmsParams): Promise<
   const smsUrl = process.env.ADVANTA_SMS_URL;
   const apiKey = process.env.ADVANTA_API_KEY;
   const partnerId = process.env.ADVANTA_PARTNER_ID;
-  const shortcode = process.env.ADVANTA_SHORTCODE || "CONNECT";
+  const shortcode = process.env.ADVANTA_SHORTCODE;
 
   if (!smsUrl || !apiKey) {
     throw new Error("Missing SMS configuration (ADVANTA_SMS_URL or ADVANTA_API_KEY)");

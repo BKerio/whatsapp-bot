@@ -11,7 +11,7 @@ import {
 async function sendOtpAndPrompt(to: string): Promise<boolean> {
   try {
     await requestRegistrationOtp(to);
-    setFlow(to, "register_otp");
+    await setFlow(to, "register_otp");
     await sendMessage(to, {
       type: "text",
       text:
@@ -35,11 +35,11 @@ async function sendOtpAndPrompt(to: string): Promise<boolean> {
 }
 
 async function showRegistrationConfirm(to: string): Promise<void> {
-  const session = getSession(to);
+  const session = await getSession(to);
   const name = session.data.name ?? "N/A";
   const idNumber = session.data.idNumber ?? "N/A";
 
-  setFlow(to, "register_confirm");
+  await setFlow(to, "register_confirm");
   await sendMessage(to, {
     type: "buttons",
     text:
@@ -56,7 +56,7 @@ export async function startRegister(to: string): Promise<void> {
   const existing = await findUserByPhone(to);
 
   if (existing) {
-    resetSession(to);
+    await resetSession(to);
     await sendMessage(to, {
       type: "text",
       text:
@@ -66,7 +66,7 @@ export async function startRegister(to: string): Promise<void> {
         `ID Number: *${existing.idNumber}*\n\n` +
         "To update your details, complete registration again with OTP verification.",
     });
-    setFlow(to, "register_name");
+    await setFlow(to, "register_name");
     await sendMessage(to, {
       type: "text",
       text: "Enter your *full name* to update your profile:",
@@ -74,7 +74,7 @@ export async function startRegister(to: string): Promise<void> {
     return;
   }
 
-  setFlow(to, "register_name");
+  await setFlow(to, "register_name");
   await sendMessage(to, {
     type: "text",
     text:
@@ -90,7 +90,7 @@ export async function handleRegisterFlow(
   input: string,
   normalized: string
 ): Promise<boolean> {
-  const session = getSession(to);
+  const session = await getSession(to);
 
   if (session.flow === "register_name") {
     if (input.length < 2) {
@@ -101,8 +101,8 @@ export async function handleRegisterFlow(
       return false;
     }
 
-    setData(to, "name", input);
-    setFlow(to, "register_id");
+    await setData(to, "name", input);
+    await setFlow(to, "register_id");
     await sendMessage(to, {
       type: "text",
       text:
@@ -122,7 +122,7 @@ export async function handleRegisterFlow(
       return false;
     }
 
-    setData(to, "idNumber", input);
+    await setData(to, "idNumber", input);
     await sendOtpAndPrompt(to);
     return false;
   }
@@ -159,7 +159,7 @@ export async function handleRegisterFlow(
       return false;
     }
 
-    setData(to, "phoneVerified", "true");
+    await setData(to, "phoneVerified", "true");
     await showRegistrationConfirm(to);
     return false;
   }
@@ -175,7 +175,7 @@ export async function handleRegisterFlow(
       }
 
       await saveUser({ phone: to, name, idNumber });
-      resetSession(to);
+      await resetSession(to);
 
       await sendMessage(to, {
         type: "text",
@@ -188,7 +188,7 @@ export async function handleRegisterFlow(
     }
 
     if (normalized === "confirm_no" || normalized === "main_menu") {
-      resetSession(to);
+      await resetSession(to);
       await sendMessage(to, {
         type: "text",
         text: "Registration cancelled.",

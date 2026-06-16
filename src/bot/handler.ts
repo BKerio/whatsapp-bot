@@ -55,7 +55,7 @@ function normalizeText(input: string): string {
 }
 
 async function showMainMenu(to: string): Promise<void> {
-  resetSession(to);
+  await resetSession(to);
   const user = await findUserByPhone(to);
   const text = user
     ? `Welcome back, *${user.name}* 👋\n\n*${COMPANY.name}* Customer Support\n${COMPANY.tagline}\n\nHow can we help you today?`
@@ -80,7 +80,7 @@ async function showHelp(to: string): Promise<void> {
 }
 
 async function showServices(to: string): Promise<void> {
-  resetSession(to);
+  await resetSession(to);
   await sendMessage(to, {
     type: "list",
     text:
@@ -111,7 +111,7 @@ async function showServiceDetail(to: string, serviceId: string): Promise<void> {
 }
 
 async function showTeam(to: string): Promise<void> {
-  resetSession(to);
+  await resetSession(to);
   await sendMessage(to, {
     type: "list",
     text:
@@ -160,7 +160,7 @@ async function showTeamDepartment(to: string, departmentId: string): Promise<voi
 }
 
 async function showContact(to: string): Promise<void> {
-  resetSession(to);
+  await resetSession(to);
   await sendMessage(to, {
     type: "text",
     text:
@@ -184,7 +184,7 @@ async function showContact(to: string): Promise<void> {
 }
 
 async function startSupport(to: string): Promise<void> {
-  setFlow(to, "support_category");
+  await setFlow(to, "support_category");
   await sendMessage(to, {
     type: "list",
     text: "🎫 *Support Request*\n\nSelect the category that best describes your issue:",
@@ -194,7 +194,7 @@ async function startSupport(to: string): Promise<void> {
 }
 
 async function startPayments(to: string): Promise<void> {
-  setFlow(to, "payments_amount");
+  await setFlow(to, "payments_amount");
   await sendMessage(to, {
     type: "list",
     text: "💳 *Make Payment*\n\nSelect the service you are paying for:",
@@ -204,7 +204,7 @@ async function startPayments(to: string): Promise<void> {
 }
 
 async function connectAgent(to: string): Promise<void> {
-  resetSession(to);
+  await resetSession(to);
   const user = await findUserByPhone(to);
   const nameLine = user ? `Name: *${user.name}*\n` : "";
 
@@ -260,7 +260,7 @@ async function handleServiceSelection(to: string, serviceId: string): Promise<vo
       await showTeam(to);
       break;
     case "company_profile":
-      resetSession(to);
+      await resetSession(to);
       await sendCompanyProfile(to);
       break;
     case "agent":
@@ -286,7 +286,7 @@ async function handlePaymentsFlow(
   input: string,
   normalized: string
 ): Promise<void> {
-  const session = getSession(to);
+  const session = await getSession(to);
 
   if (normalized === "main_menu") {
     await showMainMenu(to);
@@ -300,7 +300,7 @@ async function handlePaymentsFlow(
       return;
     }
 
-    setData(to, "paymentCategory", label);
+    await setData(to, "paymentCategory", label);
     await sendMessage(to, {
       type: "text",
       text:
@@ -321,7 +321,7 @@ async function handlePaymentsFlow(
   }
 
   const category = session.data.paymentCategory;
-  resetSession(to);
+  await resetSession(to);
 
   await sendMessage(to, {
     type: "text",
@@ -329,23 +329,34 @@ async function handlePaymentsFlow(
       "📱 *M-Pesa Payment Request*\n\n" +
       `Service: *${category}*\n` +
       `Amount: *KES ${amount.toLocaleString()}*\n\n` +
-      "An M-Pesa prompt has been sent to your phone.\n" +
-      "Enter your *M-Pesa PIN* to complete the payment.\n\n" +
-      "_You will receive a confirmation message here once done._",
+      "Sending the request to M-Pesa. Please wait...",
   });
 
   try {
     const result = await initiateStkPush(to, amount, category);
     registerPendingPayment(result.checkoutRequestId, to, category, amount);
     console.log(`STK Push sent for ${to} - CheckoutRequestID: ${result.checkoutRequestId}`);
+
+    await sendMessage(to, {
+      type: "text",
+      text:
+        "✅ *Request Sent*\n\n" +
+        "An M-Pesa prompt has been sent to your phone.\n" +
+        "Enter your *M-Pesa PIN* to complete the payment.\n\n" +
+        "_You will receive a confirmation message here once done._",
+    });
   } catch (err) {
     console.error("STK Push failed from bot handler:", err);
     await sendMessage(to, {
       type: "text",
       text:
         "❌ *Payment Request Failed*\n\n" +
-        "We could not reach M-Pesa at this time.\n" +
-        "Please try again or select *Talk to Agent* for help.",
+        "The payment request was not accepted by M-Pesa.\n\n" +
+        "Common causes:\n" +
+        "- Wrong Daraja credentials (consumer key/secret)\n" +
+        "- Wrong shortcode/passkey/till number\n" +
+        "- Callback URL not reachable (ngrok changed)\n\n" +
+        "Try again, or select *Talk to Agent* for help.",
     });
     await showMainMenu(to);
   }
@@ -356,7 +367,7 @@ async function handleSupportFlow(
   input: string,
   normalized: string
 ): Promise<void> {
-  const session = getSession(to);
+  const session = await getSession(to);
 
   if (session.flow === "support_category") {
     if (normalized === "main_menu") {
@@ -370,8 +381,8 @@ async function handleSupportFlow(
       return;
     }
 
-    setData(to, "supportCategory", label);
-    setFlow(to, "support_description");
+    await setData(to, "supportCategory", label);
+    await setFlow(to, "support_description");
     await sendMessage(to, {
       type: "text",
       text:
@@ -391,8 +402,8 @@ async function handleSupportFlow(
       return;
     }
 
-    setData(to, "supportDescription", input);
-    setFlow(to, "support_confirm");
+    await setData(to, "supportDescription", input);
+    await setFlow(to, "support_confirm");
     const category = session.data.supportCategory ?? "N/A";
 
     await sendMessage(to, {
@@ -412,7 +423,7 @@ async function handleSupportFlow(
       const category = session.data.supportCategory ?? "General";
       const description = session.data.supportDescription ?? "N/A";
       const ticketId = `MS-${Date.now().toString().slice(-8)}`;
-      resetSession(to);
+      await resetSession(to);
 
       await sendMessage(to, {
         type: "text",
@@ -439,7 +450,7 @@ async function handleActiveFlow(
   input: string,
   normalized: string
 ): Promise<void> {
-  const { flow } = getSession(to);
+  const { flow } = await getSession(to);
 
   if (normalized === "back" || normalized === "cancel" || normalized === "main_menu") {
     await showMainMenu(to);
@@ -482,7 +493,7 @@ export async function handleMessage(
   }
 
   const normalized = normalizeText(input);
-  const session = getSession(to);
+  const session = await getSession(to);
 
   if (MENU_TRIGGERS.has(normalized)) {
     if (normalized === "help") {

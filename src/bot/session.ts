@@ -14,27 +14,51 @@ export interface Session {
   data: Record<string, string>;
 }
 
-const sessions = new Map<string, Session>();
+import { SessionModel, nextExpiry } from "@/models/session";
 
-export function getSession(phone: string): Session {
-  const existing = sessions.get(phone);
-  if (existing) return existing;
+async function getOrCreate(phone: string): Promise<Session> {
+  const existing = await SessionModel.findOne({ phone }).lean<{
+    flow?: FlowStep;
+    data?: Record<string, string>;
+  }>();
 
-  const session: Session = { flow: "idle", data: {} };
-  sessions.set(phone, session);
-  return session;
+  if (existing?.flow && existing.data) {
+    return { flow: existing.flow, data: existing.data };
+  }
+
+  await SessionModel.updateOne(
+    { phone },
+    { $set: { phone, flow: "idle", data: {}, expiresAt: nextExpiry() } },
+    { upsert: true }
+  );
+
+  return { flow: "idle", data: {} };
 }
 
-export function resetSession(phone: string): void {
-  sessions.set(phone, { flow: "idle", data: {} });
+export async function getSession(phone: string): Promise<Session> {
+  return getOrCreate(phone);
 }
 
-export function setFlow(phone: string, flow: FlowStep): void {
-  const session = getSession(phone);
-  session.flow = flow;
+export async function resetSession(phone: string): Promise<void> {
+  await SessionModel.updateOne(
+    { phone },
+    { $set: { flow: "idle", data: {}, expiresAt: nextExpiry() } },
+    { upsert: true }
+  );
 }
 
-export function setData(phone: string, key: string, value: string): void {
-  const session = getSession(phone);
-  session.data[key] = value;
+export async function setFlow(phone: string, flow: FlowStep): Promise<void> {
+  await SessionModel.updateOne(
+    { phone },
+    { $set: { flow, expiresAt: nextExpiry() } },
+    { upsert: true }
+  );
+}
+
+export async function setData(phone: string, key: string, value: string): Promise<void> {
+  await SessionModel.updateOne(
+    { phone },
+    { $set: { [`data.${key}`]: value, expiresAt: nextExpiry() } },
+    { upsert: true }
+  );
 }

@@ -1,4 +1,4 @@
-import axios from 'axios';
+import axios, { isAxiosError } from "axios";
 
 const {
   MPESA_BASE_URL,
@@ -17,17 +17,37 @@ export interface StkPushResult {
   responseDescription: string;
 }
 
+function requireEnv(name: string, value: string | undefined): string {
+  if (!value || value.trim() === "") {
+    throw new Error(`Missing required env var: ${name}`);
+  }
+  return value;
+}
+
 async function getAccessToken(): Promise<string> {
-  const response = await axios.get(
-    `${MPESA_BASE_URL}/oauth/v1/generate?grant_type=client_credentials`,
-    {
-      auth: {
-        username: MPESA_CONSUMER_KEY!,
-        password: MPESA_CONSUMER_SECRET!,
-      },
+  const baseUrl = requireEnv("MPESA_BASE_URL", MPESA_BASE_URL);
+  const consumerKey = requireEnv("MPESA_CONSUMER_KEY", MPESA_CONSUMER_KEY);
+  const consumerSecret = requireEnv("MPESA_CONSUMER_SECRET", MPESA_CONSUMER_SECRET);
+
+  try {
+    const response = await axios.get(
+      `${baseUrl}/oauth/v1/generate?grant_type=client_credentials`,
+      {
+        auth: {
+          username: consumerKey,
+          password: consumerSecret,
+        },
+      }
+    );
+    return response.data["access_token"] as string;
+  } catch (err: unknown) {
+    if (isAxiosError(err)) {
+      console.error("M-Pesa token error:", err.response?.data ?? err.message);
+    } else {
+      console.error("M-Pesa token error:", err);
     }
-  );
-  return response.data['access_token'] as string;
+    throw err;
+  }
 }
 
 /**
@@ -40,8 +60,15 @@ async function getAccessToken(): Promise<string> {
 export async function initiateStkPush(
   phone: string,
   amount: number,
-  reference = 'Tax Payment'
+  reference = "Millenium Payment"
 ): Promise<StkPushResult> {
+  const baseUrl = requireEnv("MPESA_BASE_URL", MPESA_BASE_URL);
+  const shortcode = requireEnv("MPESA_SHORTCODE", MPESA_SHORTCODE);
+  const passkey = requireEnv("MPESA_PASSKEY", MPESA_PASSKEY);
+  const tillNo = requireEnv("TILL_NO", TILL_NO);
+  const transactionType = requireEnv("MPESA_TRANSACTIONTYPE", MPESA_TRANSACTIONTYPE);
+  const callbackUrl = requireEnv("MPESA_CALLBACK_URL", MPESA_CALLBACK_URL);
+
   const formattedPhone = formatPhone(phone);
   const accessToken = await getAccessToken();
 
@@ -51,45 +78,54 @@ export async function initiateStkPush(
   const timestamp = localDate.toISOString().replace(/[^0-9]/g, '').slice(0, 14);
 
   const password = Buffer.from(
-    `${MPESA_SHORTCODE}${MPESA_PASSKEY}${timestamp}`
-  ).toString('base64');
+    `${shortcode}${passkey}${timestamp}`
+  ).toString("base64");
 
   const payload = {
-    BusinessShortCode: MPESA_SHORTCODE,
+    BusinessShortCode: shortcode,
     Password: password,
     Timestamp: timestamp,
-    TransactionType: MPESA_TRANSACTIONTYPE,
+    TransactionType: transactionType,
     Amount: Math.ceil(amount), // M-Pesa requires whole numbers
     PartyA: formattedPhone,
-    PartyB: TILL_NO,
+    PartyB: tillNo,
     PhoneNumber: formattedPhone,
-    CallBackURL: MPESA_CALLBACK_URL,
+    CallBackURL: callbackUrl,
     AccountReference: reference,
     TransactionDesc: reference,
   };
 
-  const response = await axios.post(
-    `${MPESA_BASE_URL}/mpesa/stkpush/v1/processrequest`,
-    payload,
-    {
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        'Content-Type': 'application/json',
-      },
+  try {
+    const response = await axios.post(
+      `${baseUrl}/mpesa/stkpush/v1/processrequest`,
+      payload,
+      {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
+
+    const data = response.data as {
+      CheckoutRequestID: string;
+      MerchantRequestID: string;
+      ResponseDescription: string;
+    };
+
+    return {
+      checkoutRequestId: data.CheckoutRequestID,
+      merchantRequestId: data.MerchantRequestID,
+      responseDescription: data.ResponseDescription,
+    };
+  } catch (err: unknown) {
+    if (isAxiosError(err)) {
+      console.error("M-Pesa STK error:", err.response?.data ?? err.message);
+    } else {
+      console.error("M-Pesa STK error:", err);
     }
-  );
-
-  const data = response.data as {
-    CheckoutRequestID: string;
-    MerchantRequestID: string;
-    ResponseDescription: string;
-  };
-
-  return {
-    checkoutRequestId: data.CheckoutRequestID,
-    merchantRequestId: data.MerchantRequestID,
-    responseDescription: data.ResponseDescription,
-  };
+    throw err;
+  }
 }
 
 function formatPhone(phone: string): string {

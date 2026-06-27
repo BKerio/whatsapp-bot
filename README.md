@@ -1,23 +1,24 @@
-# Shuru Bot 🤖
+# Millenium Solutions EA Ltd - WhatsApp Support Bot
 
-> A WhatsApp chatbot for KRA tax and compliance services — with M-Pesa STK Push payments, real-time Socket.IO updates, and MongoDB persistence. Built with the Meta Cloud API, Express, and TypeScript.
+> A WhatsApp customer support bot for Millenium Solutions - with service inquiries, M-Pesa STK Push payments, user registration, team directory, and real-time Socket.IO updates. Built with the Meta Cloud API, Express, MongoDB, and TypeScript.
 
 ---
 
 ## Overview
 
-**Shuru** is a conversational WhatsApp bot that guides users through common Kenya Revenue Authority (KRA) tax self-service tasks. It connects to the [Meta WhatsApp Cloud API](https://developers.facebook.com/docs/whatsapp/cloud-api) via webhooks and supports fully guided, multi-step conversation flows. Payments are handled via the [Safaricom Daraja (M-Pesa) API](https://developer.safaricom.co.ke/) with real-time callback notifications pushed to clients over Socket.IO.
+**Millenium Bot** is a conversational WhatsApp assistant that provides customer support for Millenium Solutions EA Ltd. It connects to the [Meta WhatsApp Cloud API](https://developers.facebook.com/docs/whatsapp/cloud-api) via webhooks and guides users through service inquiries, payments, registration, and team contact information. Payments are handled via the [Safaricom Daraja (M-Pesa) API](https://developer.safaricom.co.ke/) with real-time callback notifications pushed to clients over Socket.IO.
 
 ### Available Bot Services
 
 | Service | Description |
 |---|---|
-| 📄 **File Returns** | Guided nil return filing with KRA PIN + OTP verification |
-| 🔍 **Check PIN Status** | Look up a KRA PIN by National ID number |
-| 💳 **Payments** | Generate an M-Pesa STK Push payment for Income Tax, VAT, or PAYE |
-| ✅ **Tax Compliance (TCC)** | Check compliance status and retrieve a Tax Compliance Certificate |
-| 👤 **Talk to Agent** | Add yourself to the human support queue |
-| 📋 **Help** | Usage instructions for the bot |
+| 📋 **Service Catalog** | Browse and inquire about software dev, IT infrastructure, networking, cybersecurity, ERP, IoT, drone mapping, and tower solutions |
+| 👤 **User Registration** | Register phone number, name, company, and industry |
+| 💳 **Payments** | Generate M-Pesa STK Push for software dev, IT support, infrastructure, and other services |
+| 👥 **Team Directory** | View sales, support, and technical team members with contact info |
+| 🏢 **Company Profile** | Download company profile PDF and contact details |
+| 📞 **Support Queue** | Get routed to live support team members by department |
+| 📋 **Help** | Bot usage instructions |
 
 ---
 
@@ -26,12 +27,12 @@
 | Layer | Technology |
 |---|---|
 | Runtime | Node.js (ESM) |
-| Language | TypeScript 5 |
-| Framework | Express 5 |
-| Database | MongoDB via Mongoose 8 |
-| Real-time | Socket.IO 4 |
-| HTTP Client | Axios |
-| Dev Server | `tsx --watch` |
+| Language | TypeScript 5.8 |
+| Framework | Express 5.2 |
+| Database | MongoDB via Mongoose 8.24 |
+| Real-time | Socket.IO 4.8 |
+| HTTP Client | Axios 1.17 |
+| Dev Server | `tsx watch` |
 | Build | `tsc` + `tsc-alias` |
 
 ---
@@ -40,19 +41,33 @@
 
 ```
 src/
-├── index.ts              # Server entry — Express, Socket.IO, MongoDB, routes
-├── env.ts                # Typed environment variable loader (WhatsApp vars)
+├── index.ts              # Server entry - Express, Socket.IO, MongoDB, routes
+├── env.ts                # Typed environment variable loader
+├── db/
+│   └── connect.ts        # MongoDB connection setup
 ├── bot/
-│   ├── handler.ts        # WhatsApp message routing & conversation flow logic
-│   ├── menus.ts          # Menu content, labels, and button definitions
-│   └── session.ts        # In-memory session state per phone number
+│   ├── handler.ts        # WhatsApp message routing & conversation flows
+│   ├── session.ts        # In-memory session state per phone number
+│   ├── menus.ts          # Menu content and button definitions
+│   ├── company.ts        # Company info, services, payments, team data
+│   ├── register.ts       # User registration flow
+│   ├── profile.ts        # Company profile sharing
+│   └── mpesa-bridge.ts   # M-Pesa payment flow integration
 ├── whatsapp/
 │   ├── client.ts         # WhatsApp Cloud API (send messages, mark as read)
-│   └── types.ts          # TypeScript types for webhooks & messages
+│   ├── types.ts          # TypeScript types for webhooks & messages
+│   └── media.ts          # Media handling (files, PDFs)
+├── services/
+│   ├── mpesa.ts          # M-Pesa STK Push implementation
+│   ├── otp.ts            # OTP/SMS service
+│   └── sms.ts            # SMS integration
 ├── routes/
-│   └── mpesa.ts          # M-Pesa STK Push, callback, status & transaction routes
+│   └── mpesa.ts          # M-Pesa endpoints (push, callback, status, transactions)
 └── models/
-    └── Payments.ts       # Mongoose model for M-Pesa payment transactions
+    ├── Payments.ts       # Mongoose model for M-Pesa transactions
+    ├── user.ts           # Mongoose model for users
+    ├── session.ts        # Mongoose model for sessions
+    └── otp.ts            # Mongoose model for OTP records
 ```
 
 ---
@@ -72,8 +87,8 @@ src/
 ### 1. Clone and install dependencies
 
 ```bash
-git clone https://github.com/BKerio/whatsapp-bot.git
-cd whatsapp-bot
+git clone https://github.com/BKerio/bot.git
+cd bot
 npm install
 ```
 
@@ -93,10 +108,11 @@ WHATSAPP_VERIFY_TOKEN=your_webhook_verify_token
 
 # Server
 PORT=3000
+NODE_ENV=development
 CLIENT_ORIGIN=http://localhost:3000
 
 # MongoDB
-MONGO_URI=mongodb://localhost:27017/shuru-bot
+MONGO_URI=mongodb://localhost:27017/millenium-bot
 
 # M-Pesa (Daraja API)
 MPESA_BASE_URL=https://sandbox.safaricom.co.ke
@@ -107,6 +123,9 @@ MPESA_PASSKEY=your_passkey
 TILL_NO=your_till_number
 MPESA_TRANSACTIONTYPE=CustomerBuyGoodsOnline
 MPESA_CALLBACK_URL=https://your-ngrok-url/api/stkpush/callback
+
+# SMS/OTP (optional)
+SMS_GATEWAY_KEY=optional_sms_gateway_key
 ```
 
 ### 3. Start the dev server
@@ -125,11 +144,11 @@ The server starts on `http://localhost:3000`.
    ```bash
    ngrok http 3000
    ```
-2. In the [Meta Developer Portal](https://developers.facebook.com/), go to **WhatsApp → Configuration → Webhook** and set:
+2. In the [Meta Developer Portal](https://developers.facebook.com/), go to **WhatsApp - Configuration - Webhook** and set:
    - **Callback URL**: `https://<ngrok-url>/api/whatsapp/webhook`
    - **Verify Token**: your `WHATSAPP_VERIFY_TOKEN`
 3. Click **Verify and Save**, then subscribe to the `messages` webhook field.
-4. Send `hi` on WhatsApp — Shuru will respond with the main menu.
+4. Send `hi` on WhatsApp - the bot will respond with the main menu.
 
 > 💡 Visit `http://localhost:3000/setup` for a step-by-step reminder directly from the running server.
 
@@ -140,13 +159,13 @@ The server starts on `http://localhost:3000`.
 ### STK Push Flow
 
 ```
-Client → POST /api/stkpush  →  Daraja API (STK Push)
+Client - POST /api/stkpush  -  Daraja API (STK Push)
                                       ↓ (user pays on phone)
-Daraja → POST /api/stkpush/callback
+Daraja - POST /api/stkpush/callback
               ↓
          Save to MongoDB
               ↓
-         io.emit('transaction_update') → Client room
+         io.emit('transaction_update') - Client room
 ```
 
 ### Real-time Updates with Socket.IO
@@ -195,7 +214,7 @@ socket.on('transaction_update', (data) => {
 
 | Method | Path | Description |
 |---|---|---|
-| `POST` | `/api/stkpush` | Initiate M-Pesa STK Push — body: `{ phone, amount }` |
+| `POST` | `/api/stkpush` | Initiate M-Pesa STK Push - body: `{ phone, amount }` |
 | `POST` | `/api/stkpush/callback` | Safaricom callback (set as `MPESA_CALLBACK_URL`) |
 | `GET` | `/api/stkpush/status/:checkoutRequestId` | Poll transaction status |
 | `GET` | `/api/transactions` | List last 50 transactions |
@@ -212,14 +231,16 @@ socket.on('transaction_update', (data) => {
 
 ## Conversation Flows (WhatsApp Bot)
 
-Shuru uses an in-memory finite-state machine keyed by phone number:
+The bot uses an in-memory finite-state machine keyed by phone number to track user conversations:
 
 ```
-idle
- ├── file_returns → file_returns_pin → file_returns_otp → file_returns_period → [confirm] → idle
- ├── pin_status   → pin_check_id → idle
- ├── payments     → payments_amount (tax type) → payments_amount (amount) → idle
- └── tcc          → tcc_pin → idle
+idle (main menu)
+ ├── register         - register_company - register_industry - register_name - idle
+ ├── services        - service_details - [service inquiry] - idle
+ ├── payments        - payment_category - payment_amount - [M-Pesa STK] - idle
+ ├── team            - team_department - [team list] - idle
+ ├── profile         - [download PDF] - idle
+ └── support         - [queue/redirect] - idle
 ```
 
 **Trigger words** (work from any state):
@@ -227,7 +248,7 @@ idle
 | Keyword | Action |
 |---|---|
 | `hi`, `hello`, `hey`, `start`, `menu`, `0` | Show main menu |
-| `help` | Show help text |
+| `help` | Show bot usage instructions |
 | `back`, `cancel` | Return to main menu |
 
 ---
@@ -280,13 +301,38 @@ npm start       # Run compiled output from dist/
 
 ---
 
+## Company Profile
+
+**Millenium Solutions EA Ltd** - "Your Technology Partner"
+
+- 📍 **Address**: Manga House - Ground Floor Wing B, 5 Kiambere Road, Upper Hill, Nairobi, Kenya
+- 📧 **Email**: info@millenium.co.ke
+- 📞 **Phone**: +254716774477
+- 🌐 **Website**: https://www.millenium.co.ke
+- ⏰ **Hours**: Monday–Friday, 8:00am–5:00pm EAT
+
+### Services Offered
+
+- 💻 **Software & Databases** - Custom apps and database solutions
+- 🖥️ **IT Infrastructure** - Compute, storage and hardware
+- 🌐 **Networking** - WAN/LAN and connectivity solutions
+- 🔒 **Cybersecurity** - Threat protection and data safety
+- 📊 **ERP Solutions** - SAP, Microsoft Navision and more
+- 📡 **IoT & Smart Solutions** - Connected device platforms
+- 🛸 **Drone Mapping** - Aerial surveying and geospatial data
+- 📶 **Comm Towers** - Tower construction and network infra
+
+---
+
 ## Notes & Limitations
 
-- **Session storage is in-memory** — WhatsApp sessions are lost on server restart. Replace the `Map` in `session.ts` with Redis or a DB store for production.
-- **Demo data** — PIN lookups and TCC responses return mock data. Integrate real KRA APIs to go live.
-- **OTP verification** — OTP sending is simulated. Integrate an SMS gateway (e.g., Africa's Talking) for real delivery.
-- **M-Pesa sandbox** — Daraja sandbox uses test credentials and simulated payments. Switch `MPESA_BASE_URL` to `https://api.safaricom.co.ke` for production.
-- **Callback URL must be public** — Safaricom cannot reach `localhost`. Always use an ngrok URL (or deployed server) for `MPESA_CALLBACK_URL`.
+- **Session storage is in-memory** - WhatsApp sessions are lost on server restart. For production, migrate to Redis or a database store.
+- **User registration & profile data** - Stored in MongoDB but may need sync with CRM systems.
+- **OTP/SMS delivery** - Simulated or integrated with SMS gateways (e.g., Africa's Talking). Configure via `SMS_GATEWAY_KEY`.
+- **M-Pesa sandbox** - Daraja sandbox uses test credentials and simulated payments. Switch `MPESA_BASE_URL` to `https://api.safaricom.co.ke` for production.
+- **Callback URL must be public** - Safaricom cannot reach `localhost`. Always use an ngrok URL (or deployed server) for `MPESA_CALLBACK_URL`.
+- **PDF delivery** - Company profile PDF is sent via WhatsApp. Ensure the file exists at the configured path.
+- **Real team data** - Team directory and contact info are managed in `bot/company.ts`. Update this file to reflect actual team members.
 
 ---
 

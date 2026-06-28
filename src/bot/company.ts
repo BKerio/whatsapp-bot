@@ -5,7 +5,6 @@ export const COMPANY_PROFILE_FILENAME = "Millenium Solutions_Business Profile.pd
 export const COMPANY = {
   name: "Millenium Solutions EA Ltd",
   tagline: "Your Technology Partner",
-  motto: "Efficiently Automating Your Business Processes.",
   email: "info@millenium.co.ke",
   phone: "+254716774477",
   address: "Manga House - Ground Floor Wing B, 5 Kiambere Road, Upper Hill, Nairobi, Kenya",

@@ -6,7 +6,7 @@ export async function requestRegistrationOtp(phone: string): Promise<void> {
 
   await sendSMS({
     mobilePhone: phone,
-    smsText: `Your ${process.env.APP_NAME || "Millenium Solutions"} verification code is ${code}. Valid for 10 minutes.`,
+    smsText: `Your ${process.env.APP_NAME || "Millenium Solutions E.A Limited"} verification code is ${code}. Valid for 10 minutes.`,
   });
 }
 

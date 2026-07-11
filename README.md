@@ -179,7 +179,7 @@ After initiating an STK Push, the client should:
 ```js
 const socket = io('http://localhost:3000');
 
-socket.emit('join_checkout', { checkoutRequestId: 'ws_xxxxxxxx' });
+socket.emit('join_checkout', { checkoutRequestId: 'ws_xxxxxxxxx' });
 
 socket.on('transaction_update', (data) => {
   console.log(data.status); // 'success' | 'cancelled' | 'timeout' | 'failure' ...

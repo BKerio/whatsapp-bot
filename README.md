@@ -277,8 +277,8 @@ npm start       # Run compiled output from dist/
 
 | Variable | Required | Default | Description |
 |---|---|---|---|
-| `PORT` | ❌ | `3000` | HTTP server port |
-| `CLIENT_ORIGIN` | ❌ | `*` | Allowed CORS origin for Socket.IO |
+| `PORT` |  | `3000` | HTTP server port |
+| `CLIENT_ORIGIN` |  | `*` | Allowed CORS origin for Socket.IO |
 
 ### MongoDB
 

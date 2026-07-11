@@ -309,7 +309,7 @@ npm start       # Run compiled output from dist/
 - 📧 **Email**: info@millenium.co.ke
 - 📞 **Phone**: +254716774477
 - 🌐 **Website**: https://www.millenium.co.ke
-- ⏰ **Hours**: Monday–Friday, 8:00am–5:00pm EAT
+- ⏰ **Hours**: Monday–Friday, 8:00am-5:00pm EAT
 
 ### Services Offered
 

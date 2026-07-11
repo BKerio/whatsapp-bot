@@ -303,7 +303,7 @@ npm start       # Run compiled output from dist/
 
 ## Company Profile
 
-**Millenium Solutions EA Ltd** - "Your Technology Partner"
+**Millenium Solutions EA Ltd** - "Your Technology Partner."
 
 - 📍 **Address**: Manga House - Ground Floor Wing B, 5 Kiambere Road, Upper Hill, Nairobi, Kenya
 - 📧 **Email**: info@millenium.co.ke

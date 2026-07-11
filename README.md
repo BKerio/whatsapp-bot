@@ -320,7 +320,7 @@ npm start       # Run compiled output from dist/
 - 📊 **ERP Solutions** - SAP, Microsoft Navision and more
 - 📡 **IoT & Smart Solutions** - Connected device platforms
 - 🛸 **Drone Mapping** - Aerial surveying and geospatial data
-- 📶 **Comm Towers** - Tower construction and network infra
+- 📶 **Comm Towers** - Tower construction and network infra.
 
 ---
 

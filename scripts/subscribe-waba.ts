@@ -19,7 +19,7 @@ async function subscribeWABA() {
         );
         console.log('✅App successfully subscribed to WABA:', response.data);
     } catch (err: any) {
-        console.error('❌ Failed to subscribe:', err.response?.data || err.message);
+        console.error('Failed to subscribe:', err.response?.data || err.message);
     }
 }
 

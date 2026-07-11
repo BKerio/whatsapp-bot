@@ -235,7 +235,7 @@ The bot uses an in-memory finite-state machine keyed by phone number to track us
 
 ```
 idle (main menu)
- ├── register         - register_company - register_industry - register_name - idle
+ ├── register        - register_company - register_industry - register_name - idle
  ├── services        - service_details - [service inquiry] - idle
  ├── payments        - payment_category - payment_amount - [M-Pesa STK] - idle
  ├── team            - team_department - [team list] - idle
